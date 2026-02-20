@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save, Upload } from 'lucide-react';
+import { optimizeImage } from '../utils/imageOptimizer';
 
 const ProductForm = ({ product, onSave, onCancel }) => {
     const [formData, setFormData] = useState({
@@ -25,37 +26,17 @@ const ProductForm = ({ product, onSave, onCancel }) => {
         setFormData({ ...formData, [e.target.name]: value });
     };
 
-    const handleImageUpload = (e) => {
+    const handleImageUpload = async (e) => {
         const file = e.target.files[0];
         if (file) {
-            // Compress image
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = (event) => {
-                const img = new Image();
-                img.src = event.target.result;
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    const MAX_WIDTH = 600; // Limit width to 600px
-                    const scaleSize = MAX_WIDTH / img.width;
-                    const width = (scaleSize < 1) ? MAX_WIDTH : img.width;
-                    const height = (scaleSize < 1) ? img.height * scaleSize : img.height;
-
-                    canvas.width = width;
-                    canvas.height = height;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, width, height);
-
-                    // Compress to JPEG with 0.7 quality
-                    const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
-
-                    // Check size roughly
-                    console.log("Original size approx:", file.size);
-                    console.log("Compressed size approx:", Math.round((compressedDataUrl.length * 3) / 4));
-
-                    setFormData(prev => ({ ...prev, image: compressedDataUrl }));
-                };
-            };
+            try {
+                // Resize to max 1200px and compress (quality 0.8)
+                const optimizedImage = await optimizeImage(file, 1200, 0.8);
+                setFormData(prev => ({ ...prev, image: optimizedImage }));
+            } catch (error) {
+                console.error("Error optimizing image:", error);
+                alert("Error al procesar la imagen.");
+            }
         }
     };
 
