@@ -1,0 +1,42 @@
+:root {
+  /* Brand Colors */
+  --color-primary: #4ECDC4;
+  /* Mint/Turquoise */
+  --color-primary-dark: #3DBEB6;
+  --color-secondary: #2D3436;
+  /* Dark Grey */
+  --color-accent: #FF6B6B;
+  /* Soft Red for actions/errors */
+  --color-bg: #F9F9F9;
+  /* Light grey background */
+  --color-white: #FFFFFF;
+  --color-wsp: #25D366;
+  /* WhatsApp brand color */
+
+  /* Typography */
+  --font-heading: 'Montserrat', sans-serif;
+  --font-body: 'Montserrat', sans-serif;
+
+  /* Spacing */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-xxl: 48px;
+
+  /* Shadows */
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+  --shadow-hover: 0 10px 25px rgba(78, 205, 196, 0.25);
+
+  /* Border Radius */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-full: 9999px;
+
+  /* Transitions */
+  --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
