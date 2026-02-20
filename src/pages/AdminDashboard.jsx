@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useProducts } from '../context/ProductContextCore';
 import { useSettings } from '../context/SettingsContextCore';
-import { Plus, Edit2, Trash2, Eye, EyeOff, Lock, MessageCircle, Save, X as XIcon } from 'lucide-react';
+import { Plus, Edit2, Trash2, Eye, EyeOff, Lock, MessageCircle, Save, X as XIcon, LogOut } from 'lucide-react';
 import ProductForm from '../components/ProductForm';
+import { useAuth } from '../context/AuthContext';
+
 
 const AdminDashboard = () => {
     const { products, addProduct, updateProduct, removeProduct, toggleStatus } = useProducts();
     const { whatsappNumber, bankDetails, updateWhatsAppNumber, updateBankDetails } = useSettings();
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [password, setPassword] = useState('');
+    const { logout } = useAuth();
     const [editingProduct, setEditingProduct] = useState(null);
+
     const [isFormOpen, setIsFormOpen] = useState(false);
 
     // Local state for editing (so we don't save every keystroke to Firebase)
@@ -50,14 +52,7 @@ const AdminDashboard = () => {
         setLocalBank({ ...localBank, [e.target.name]: e.target.value });
     };
 
-    const handleLogin = (e) => {
-        e.preventDefault();
-        if (password === 'admin123') { // Simple MVP password
-            setIsAuthenticated(true);
-        } else {
-            alert('Contraseña incorrecta');
-        }
-    };
+
 
     const handleAdd = () => {
         setEditingProduct(null);
@@ -83,52 +78,7 @@ const AdminDashboard = () => {
         }
     };
 
-    if (!isAuthenticated) {
-        return (
-            <div className="container" style={{
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                minHeight: '60vh'
-            }}>
-                <div style={{
-                    width: '100%',
-                    maxWidth: '400px',
-                    padding: '40px',
-                    backgroundColor: 'white',
-                    borderRadius: 'var(--radius-lg)',
-                    boxShadow: 'var(--shadow-md)',
-                    textAlign: 'center'
-                }}>
-                    <div style={{
-                        width: '60px',
-                        height: '60px',
-                        backgroundColor: '#eee',
-                        borderRadius: '50%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        margin: '0 auto 20px'
-                    }}>
-                        <Lock size={30} color="#666" />
-                    </div>
-                    <h2 style={{ marginBottom: '20px' }}>Acceso Administrativo</h2>
-                    <form onSubmit={handleLogin}>
-                        <input
-                            type="password"
-                            value={password}
-                            onChange={e => setPassword(e.target.value)}
-                            placeholder="Contraseña"
-                            style={{ marginBottom: '20px' }}
-                        />
-                        <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>
-                            Ingresar
-                        </button>
-                    </form>
-                </div>
-            </div>
-        );
-    }
+
 
     return (
         <div className="container" style={{ padding: '40px 20px' }}>
@@ -139,10 +89,21 @@ const AdminDashboard = () => {
                 marginBottom: '30px'
             }}>
                 <h1 style={{ fontSize: '2rem' }}>Panel de Administración</h1>
-                <button onClick={handleAdd} className="btn btn-primary" style={{ display: 'flex', gap: '8px' }}>
-                    <Plus size={20} />
-                    Nuevo Producto
-                </button>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                    <button
+                        onClick={logout}
+                        className="btn btn-secondary"
+                        style={{ display: 'flex', gap: '8px', alignItems: 'center', backgroundColor: '#f8f9fa', border: '1px solid #ddd', color: '#666' }}
+                    >
+                        <LogOut size={18} />
+                        Cerrar Sesión
+                    </button>
+                    <button onClick={handleAdd} className="btn btn-primary" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <Plus size={20} />
+                        Nuevo Producto
+                    </button>
+                </div>
+
             </div>
 
             {/* Configuration Section (WhatsApp & Bank) */}

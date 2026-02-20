@@ -8,6 +8,10 @@ import { CartProvider } from './context/CartContext';
 import CartDrawer from './components/CartDrawer';
 import CheckoutModal from './components/CheckoutModal';
 import AdminDashboard from './pages/AdminDashboard';
+import Login from './pages/Login';
+import { AuthProvider } from './context/AuthContext';
+import ProtectedRoute from './components/ProtectedRoute';
+
 
 // Safety component to prevent white screen of death
 class ErrorBoundary extends React.Component {
@@ -64,34 +68,45 @@ function App() {
   return (
     <ErrorBoundary>
       <BrowserRouter>
-        <SettingsProvider>
-          <ProductProvider>
-            <CartProvider>
-              <div className="app-wrapper" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-                <Navbar />
-                <main style={{ flex: 1 }}>
-                  <Routes>
-                    <Route path="/" element={<Home />} />
-                    <Route path="/admin" element={<AdminDashboard />} />
-                  </Routes>
-                </main>
-                <footer style={{
-                  textAlign: 'center',
-                  padding: '20px',
-                  color: '#999',
-                  fontSize: '0.9rem',
-                  borderTop: '1px solid #eee'
-                }}>
-                  © {new Date().getFullYear()} Tu Punto Dulce
-                </footer>
+        <AuthProvider>
+          <SettingsProvider>
+            <ProductProvider>
+              <CartProvider>
+                <div className="app-wrapper" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+                  <Navbar />
+                  <main style={{ flex: 1 }}>
+                    <Routes>
+                      <Route path="/" element={<Home />} />
+                      <Route path="/admin" element={<Login />} />
+                      <Route
+                        path="/admin-panel"
+                        element={
+                          <ProtectedRoute>
+                            <AdminDashboard />
+                          </ProtectedRoute>
+                        }
+                      />
+                    </Routes>
+                  </main>
 
-                {/* Global components */}
-                <CartDrawer />
-                <CheckoutModal />
-              </div>
-            </CartProvider>
-          </ProductProvider>
-        </SettingsProvider>
+                  <footer style={{
+                    textAlign: 'center',
+                    padding: '20px',
+                    color: '#999',
+                    fontSize: '0.9rem',
+                    borderTop: '1px solid #eee'
+                  }}>
+                    © {new Date().getFullYear()} Tu Punto Dulce
+                  </footer>
+
+                  {/* Global components */}
+                  <CartDrawer />
+                  <CheckoutModal />
+                </div>
+              </CartProvider>
+            </ProductProvider>
+          </SettingsProvider>
+        </AuthProvider>
       </BrowserRouter>
     </ErrorBoundary>
   );
