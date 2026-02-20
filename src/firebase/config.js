@@ -4,7 +4,7 @@ import { getAuth } from "firebase/auth";
 
 
 const firebaseConfig = {
-    apiKey: "AIzaSyCkQU5JrkeRn7LPv7GfndQ17LMP8ms8-o4",
+    apiKey: "AIzaSyDjbIKnCVWDzjtNFFRTCpqzVIj5RuJGx_Q",
     authDomain: "tu-punto-dulce-web.firebaseapp.com",
     projectId: "tu-punto-dulce-web",
     storageBucket: "tu-punto-dulce-web.firebasestorage.app",
