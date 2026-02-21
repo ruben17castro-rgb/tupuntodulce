@@ -59,12 +59,13 @@ export const ProductProvider = ({ children }) => {
         const product = products.find(p => p.id === id);
         if (product) {
             try {
-                await updateProductFirebase(id, { activo: !product.activo });
+                // Pass the full product object to updateProduct to avoid data loss in mapToFirestore
+                await updateProduct({ ...product, active: !product.active });
             } catch (err) {
                 console.error("Error toggling status:", err);
             }
         }
-    }, [products]);
+    }, [products, updateProduct]);
 
     const discountStock = useCallback(async (cartItems) => {
         try {
