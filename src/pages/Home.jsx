@@ -1,6 +1,7 @@
 import React from 'react';
 import { useProducts } from '../context/ProductContextCore';
 import ProductCard from '../components/ProductCard';
+import ProductDetailModal from '../components/ProductDetailModal';
 import logo from '../assets/logo.png';
 import alfajorImg from '../assets/alfajor.jpeg';
 import rollitosImg from '../assets/rollitos.jpeg';
@@ -10,6 +11,7 @@ import galletas5Img from '../assets/galletas 5.png';
 
 const Home = () => {
     const { products, loading } = useProducts();
+    const [selectedProduct, setSelectedProduct] = React.useState(null);
 
     return (
         <div>
@@ -167,12 +169,21 @@ const Home = () => {
                             {(Array.isArray(products) ? products : [])
                                 .filter(p => p && p.id && p.active)
                                 .map(product => (
-                                    <ProductCard key={String(product.id)} product={product} />
+                                    <ProductCard
+                                        key={String(product.id)}
+                                        product={product}
+                                        onSelect={() => setSelectedProduct(product)}
+                                    />
                                 ))}
                         </div>
                     )}
                 </div>
             </section>
+
+            <ProductDetailModal
+                product={selectedProduct}
+                onClose={() => setSelectedProduct(null)}
+            />
         </div>
     );
 };

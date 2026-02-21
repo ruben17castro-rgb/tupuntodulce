@@ -2,7 +2,7 @@ import React from 'react';
 import { useCart } from '../context/CartContextCore';
 import { Plus } from 'lucide-react';
 
-const ProductCard = ({ product }) => {
+const ProductCard = ({ product, onSelect }) => {
     const { addToCart } = useCart();
 
     const formatPrice = (price) => {
@@ -18,16 +18,22 @@ const ProductCard = ({ product }) => {
     const productId = String(product?.id || 'unknown');
 
     return (
-        <div key={`card-${productId}`} className="product-card" style={{
-            backgroundColor: 'white',
-            borderRadius: 'var(--radius-md)',
-            overflow: 'hidden',
-            boxShadow: 'var(--shadow-sm)',
-            transition: 'var(--transition)',
-            border: '1px solid rgba(0,0,0,0.05)',
-            display: 'flex',
-            flexDirection: 'column'
-        }}>
+        <div
+            key={`card-${productId}`}
+            className="product-card"
+            onClick={onSelect}
+            style={{
+                backgroundColor: 'white',
+                borderRadius: 'var(--radius-md)',
+                overflow: 'hidden',
+                boxShadow: 'var(--shadow-sm)',
+                transition: 'var(--transition)',
+                border: '1px solid rgba(0,0,0,0.05)',
+                display: 'flex',
+                flexDirection: 'column',
+                cursor: 'pointer'
+            }}
+        >
             <div key={`img-container-${productId}`} style={{
                 position: 'relative',
                 paddingTop: '100%',
@@ -134,7 +140,10 @@ const ProductCard = ({ product }) => {
 
                     <button
                         key={`btn-${productId}`}
-                        onClick={() => addToCart(product)}
+                        onClick={(e) => {
+                            e.stopPropagation(); // Prevents modal from opening when clicking the button
+                            addToCart(product);
+                        }}
                         className="btn btn-primary"
                         disabled={isOutOfStock}
                         style={{
