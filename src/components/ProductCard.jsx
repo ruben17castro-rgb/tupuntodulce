@@ -1,6 +1,7 @@
 import React from 'react';
 import { useCart } from '../context/CartContextCore';
 import { Plus } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 const ProductCard = ({ product, onSelect }) => {
     const { addToCart } = useCart();
@@ -18,16 +19,21 @@ const ProductCard = ({ product, onSelect }) => {
     const productId = String(product?.id || 'unknown');
 
     return (
-        <div
+        <motion.div
             key={`card-${productId}`}
             className="product-card"
             onClick={onSelect}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-50px" }}
+            whileHover={{ y: -5, boxShadow: 'var(--shadow-md)' }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
             style={{
                 backgroundColor: 'white',
                 borderRadius: 'var(--radius-md)',
                 overflow: 'hidden',
                 boxShadow: 'var(--shadow-sm)',
-                transition: 'var(--transition)',
+                transition: 'border-color 0.3s ease',
                 border: '1px solid rgba(0,0,0,0.05)',
                 display: 'flex',
                 flexDirection: 'column',
@@ -138,7 +144,7 @@ const ProductCard = ({ product, onSelect }) => {
                         {formatPrice(product.price)}
                     </span>
 
-                    <button
+                    <motion.button
                         key={`btn-${productId}`}
                         onClick={(e) => {
                             e.stopPropagation(); // Prevents modal from opening when clicking the button
@@ -146,6 +152,7 @@ const ProductCard = ({ product, onSelect }) => {
                         }}
                         className="btn btn-primary"
                         disabled={isOutOfStock}
+                        whileTap={{ scale: 0.95 }}
                         style={{
                             padding: '8px 12px',
                             fontSize: '0.85rem',
@@ -166,10 +173,10 @@ const ProductCard = ({ product, onSelect }) => {
                                 Agregar
                             </span>
                         )}
-                    </button>
+                    </motion.button>
                 </div>
             </div>
-        </div>
+        </motion.div>
     );
 };
 
