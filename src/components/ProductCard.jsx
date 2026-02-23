@@ -1,7 +1,7 @@
 import React from 'react';
 import { useCart } from '../context/CartContextCore';
 import { Plus } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion } from 'framer-motion'; // eslint-disable-line no-unused-vars
 
 const ProductCard = ({ product, onSelect }) => {
     const { addToCart } = useCart();
