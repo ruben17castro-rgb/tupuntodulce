@@ -147,8 +147,8 @@ const CheckoutModal = () => {
                     </div>
 
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '15px' }}>
-                        <div>
-                            <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Fecha Entrega *</label>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500', whiteSpace: 'nowrap' }}>Fecha Entrega *</label>
                             <input
                                 type="date"
                                 name="date"
@@ -157,8 +157,8 @@ const CheckoutModal = () => {
                                 onChange={handleChange}
                             />
                         </div>
-                        <div>
-                            <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Hora Estimada *</label>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500', whiteSpace: 'nowrap' }}>Hora Estimada *</label>
                             <input
                                 type="text"
                                 name="time"

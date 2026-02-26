@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useProducts } from '../context/ProductContextCore';
 import { useSettings } from '../context/SettingsContextCore';
-import { Plus, Edit2, Trash2, Eye, EyeOff, Lock, MessageCircle, Save, X as XIcon, LogOut } from 'lucide-react';
+import { Plus, Edit2, Trash2, Eye, EyeOff, Lock, MessageCircle, Save, X as XIcon, LogOut, BarChart2 } from 'lucide-react';
 import ProductForm from '../components/ProductForm';
 import { useAuth } from '../context/AuthContext';
+import { subscribeToPageViews } from '../services/firebaseService';
 
 
 const AdminDashboard = () => {
@@ -11,8 +12,17 @@ const AdminDashboard = () => {
     const { whatsappNumber, bankDetails, updateWhatsAppNumber, updateBankDetails } = useSettings();
     const { logout } = useAuth();
     const [editingProduct, setEditingProduct] = useState(null);
+    const [pageViews, setPageViews] = useState(0);
 
     const [isFormOpen, setIsFormOpen] = useState(false);
+
+    // Subscribe to page views
+    useEffect(() => {
+        const unsubscribe = subscribeToPageViews((views) => {
+            setPageViews(views);
+        });
+        return () => unsubscribe();
+    }, []);
 
     // Local state for editing (so we don't save every keystroke to Firebase)
     const [localWsp, setLocalWsp] = useState(whatsappNumber);
@@ -81,14 +91,14 @@ const AdminDashboard = () => {
 
 
     return (
-        <div className="container" style={{ padding: '40px 20px' }}>
+        <div className="container" style={{ padding: '40px 20px', fontFamily: 'var(--font-body)' }}>
             <div style={{
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
                 marginBottom: '30px'
             }}>
-                <h1 style={{ fontSize: '2rem' }}>Panel de Administración</h1>
+                <h1 style={{ fontSize: '2rem', fontFamily: 'var(--font-body)' }}>Panel de Administración</h1>
                 <div style={{ display: 'flex', gap: '12px' }}>
                     <button
                         onClick={logout}
@@ -106,6 +116,39 @@ const AdminDashboard = () => {
 
             </div>
 
+            {/* Top Stats Section */}
+            <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                gap: '20px',
+                marginBottom: '30px'
+            }}>
+                <div style={{
+                    backgroundColor: 'white',
+                    padding: '24px',
+                    borderRadius: 'var(--radius-md)',
+                    boxShadow: 'var(--shadow-sm)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '20px'
+                }}>
+                    <div style={{
+                        backgroundColor: '#eff6ff',
+                        padding: '16px',
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                    }}>
+                        <BarChart2 size={32} color="#3b82f6" />
+                    </div>
+                    <div>
+                        <p style={{ margin: 0, color: '#64748b', fontSize: '0.9rem', fontWeight: '500' }}>Visitas Totales</p>
+                        <h2 style={{ margin: 0, fontSize: '2rem', color: '#1e293b' }}>{pageViews}</h2>
+                    </div>
+                </div>
+            </div>
+
             {/* Configuration Section (WhatsApp & Bank) */}
             <div style={{
                 backgroundColor: 'white',
@@ -119,7 +162,7 @@ const AdminDashboard = () => {
             }}>
                 {/* WhatsApp Config */}
                 <div style={{ borderRight: '1px solid #eee', paddingRight: '20px' }}>
-                    <h3 style={{ fontSize: '1.1rem', marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <h3 style={{ fontSize: '1.1rem', marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '8px', fontFamily: 'var(--font-body)' }}>
                         <MessageCircle size={18} color="var(--color-wsp)" />
                         Configuración WhatsApp
                     </h3>
@@ -169,7 +212,7 @@ const AdminDashboard = () => {
 
                 {/* Bank Config */}
                 <div>
-                    <h3 style={{ fontSize: '1.1rem', marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <h3 style={{ fontSize: '1.1rem', marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '8px', fontFamily: 'var(--font-body)' }}>
                         <Lock size={18} color="var(--color-secondary)" />
                         Datos de Transferencia
                     </h3>

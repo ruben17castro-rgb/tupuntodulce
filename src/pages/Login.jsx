@@ -33,7 +33,8 @@ const Login = () => {
             justifyContent: 'center',
             alignItems: 'center',
             padding: '40px 20px',
-            minHeight: '80vh'
+            minHeight: '80vh',
+            fontFamily: 'var(--font-body)'
         }}>
             <div className="login-card" style={{
                 background: 'white',

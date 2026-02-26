@@ -8,7 +8,8 @@ import {
     getDoc,
     setDoc,
     query,
-    orderBy
+    orderBy,
+    increment
 } from "firebase/firestore";
 import { db } from "../firebase/config";
 
@@ -159,4 +160,38 @@ export const saveSettingsFirebase = async (data) => {
         console.error("Error updating settings in Firebase:", error);
         throw error;
     }
+};
+
+/**
+ * ==========================================
+ * ESTADÍSTICAS Y VISITAS
+ * ==========================================
+ */
+
+const STATS_COLLECTION = "stats";
+const VISITS_DOC = "visits_counter";
+
+/**
+ * Incrementa el contador de visitas en 1
+ */
+export const incrementPageViewsFirebase = async () => {
+    try {
+        const docRef = doc(db, STATS_COLLECTION, VISITS_DOC);
+        await setDoc(docRef, { totalViews: increment(1) }, { merge: true });
+    } catch (error) {
+        console.error("Error incrementing page views in Firebase:", error);
+    }
+};
+
+/**
+ * Suscripción al contador de visitas en tiempo real para el Admin Dashboard
+ */
+export const subscribeToPageViews = (callback) => {
+    return onSnapshot(doc(db, STATS_COLLECTION, VISITS_DOC), (docSnap) => {
+        if (docSnap.exists()) {
+            callback(docSnap.data().totalViews || 0);
+        } else {
+            callback(0);
+        }
+    });
 };

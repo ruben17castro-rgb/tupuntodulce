@@ -1,86 +1,132 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useProducts } from '../context/ProductContextCore';
 import ProductCard from '../components/ProductCard';
 import ProductDetailModal from '../components/ProductDetailModal';
+import { incrementPageViewsFirebase } from '../services/firebaseService';
 import logo from '../assets/logo.png';
 import alfajorImg from '../assets/alfajor.jpeg';
 import rollitosImg from '../assets/rollitos.jpeg';
 import galletasImg from '../assets/galletas.png';
 import galletas4Img from '../assets/galletas 4.png';
 import galletas5Img from '../assets/galletas 5.png';
+import bgHero from '../assets/bg-hero.png';
 
 const Home = () => {
     const { products, loading } = useProducts();
-    const [selectedProduct, setSelectedProduct] = React.useState(null);
+    const [selectedProduct, setSelectedProduct] = useState(null);
+
+    // Track page views once per session
+    useEffect(() => {
+        const hasVisited = sessionStorage.getItem('hasVisitedTPD');
+        if (!hasVisited) {
+            incrementPageViewsFirebase();
+            sessionStorage.setItem('hasVisitedTPD', 'true');
+        }
+    }, []);
 
     return (
         <div>
             {/* Hero Section */}
             {/* Hero Section */}
             <section style={{
+                position: 'relative',
                 textAlign: 'center',
-                paddingTop: 'var(--spacing-xl)',
+                paddingTop: 'var(--spacing-xxl)',
                 paddingBottom: 'var(--spacing-xxl)',
-                backgroundColor: '#F9F7F2', /* Beige/Cream color */
-                borderBottom: '1px solid #EAE0D5'
+                backgroundImage: `url(${bgHero})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                borderBottom: '1px solid #EAE0D5',
+                overflow: 'hidden'
             }}>
-                <div className="container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                {/* Dark overlay for readability */}
+                <div style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    backgroundColor: 'rgba(74, 59, 50, 0.7)', /* Warm dark chocolate overlay */
+                    zIndex: 1
+                }}></div>
+
+                <div className="container" style={{ position: 'relative', zIndex: 2, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                     {/* Logo & Brand */}
                     <img
                         src={logo}
                         alt="Tu Punto Dulce Logo"
                         style={{
-                            width: '80px',
-                            height: '80px',
-                            marginBottom: 'var(--spacing-sm)',
+                            width: '180px', /* Increased base size to compensate for cropping */
+                            height: '180px',
+                            marginBottom: 'var(--spacing-md)',
                             borderRadius: '50%',
-                            boxShadow: '0 4px 6px rgba(0,0,0,0.05)'
+                            boxShadow: '0 8px 16px rgba(0,0,0,0.3)',
+                            objectFit: 'cover',
+                            clipPath: 'circle(37% at 50% 50%)', /* Tighter crop to only show the inner circle */
+                            transform: 'scale(1.2)' /* Scale up slightly to offset the heavy clipping */
                         }}
                     />
 
                     <h1 style={{
-                        fontSize: '3.5rem',
-                        color: 'var(--color-secondary)',
+                        fontSize: '4.5rem', /* Larger impact */
+                        fontFamily: 'var(--font-heading)',
+                        color: 'var(--color-bg)', /* Cream color for contrast against dark bg */
                         marginBottom: '0',
-                        letterSpacing: '-1px',
-                        lineHeight: '1.1'
+                        letterSpacing: '1px',
+                        lineHeight: '1.2',
+                        textShadow: '2px 4px 10px rgba(0,0,0,0.5)',
                     }}>
                         Tu Punto Dulce
                     </h1>
 
                     <div style={{ marginBottom: 'var(--spacing-xl)', marginTop: 'var(--spacing-xs)' }}>
                         <p style={{
-                            fontSize: '0.9rem',
-                            color: '#333',
+                            fontSize: '1rem',
+                            color: '#e6d5c3', /* Warm light brown/cream text */
                             fontWeight: '600',
                             textTransform: 'uppercase',
-                            letterSpacing: '1px',
-                            marginBottom: 'var(--spacing-xs)'
+                            letterSpacing: '3px',
+                            marginBottom: 'var(--spacing-sm)',
+                            textShadow: '1px 2px 4px rgba(0,0,0,0.5)',
                         }}>
                             Gracias por visitarnos
                         </p>
                         <h2 style={{
                             fontSize: '2.5rem',
-                            color: 'var(--color-secondary)',
-                            fontWeight: '600',
+                            color: 'white',
+                            fontWeight: '700',
                             margin: 0,
-                            lineHeight: '1.2'
+                            lineHeight: '1.3',
+                            textShadow: '2px 4px 8px rgba(0,0,0,0.4)',
                         }}>
                             ¿Qué deseas pedir?
                         </h2>
                     </div>
 
-                    {/* CTA Button */}
                     <button
                         className="btn btn-primary"
                         onClick={() => {
                             document.getElementById('catalog').scrollIntoView({ behavior: 'smooth' });
                         }}
                         style={{
-                            padding: '12px 32px',
-                            fontSize: '1.1rem',
-                            boxShadow: '0 10px 20px rgba(78, 205, 196, 0.3)',
-                            marginBottom: 'var(--spacing-xl)'
+                            padding: '16px 40px',
+                            fontSize: '1.2rem',
+                            borderRadius: 'var(--radius-full)',
+                            boxShadow: '0 10px 25px rgba(0, 0, 0, 0.4)',
+                            marginBottom: 'var(--spacing-xl)',
+                            transform: 'scale(1)',
+                            transition: 'var(--transition)',
+                            backgroundColor: 'var(--color-primary)',
+                            color: 'white',
+                            border: '2px solid rgba(255,255,255,0.2)'
+                        }}
+                        onMouseOver={(e) => {
+                            e.currentTarget.style.transform = 'scale(1.05) translateY(-2px)';
+                            e.currentTarget.style.backgroundColor = 'var(--color-primary-dark)';
+                        }}
+                        onMouseOut={(e) => {
+                            e.currentTarget.style.transform = 'scale(1) translateY(0)';
+                            e.currentTarget.style.backgroundColor = 'var(--color-primary)';
                         }}
                     >
                         Haz tu pedido ahora
@@ -106,17 +152,31 @@ const Home = () => {
                                     display: flex;
                                     width: max-content;
                                     animation: slide 30s linear infinite;
-                                    gap: 20px;
+                                    gap: 30px;
                                     align-items: center;
+                                    padding-top: 20px;
+                                    padding-bottom: 30px;
                                 }
 
                                 .slider-img {
-                                    width: 250px;
-                                    height: 250px;
+                                    width: 260px;
+                                    height: 260px;
                                     object-fit: cover;
                                     border-radius: var(--radius-lg);
                                     box-shadow: var(--shadow-lg);
                                     flex-shrink: 0;
+                                    transform: rotate(-3deg);
+                                    transition: var(--transition);
+                                }
+                                
+                                .slider-img:nth-child(even) {
+                                    transform: rotate(4deg) translateY(10px);
+                                }
+                                
+                                .slider-img:hover {
+                                    transform: scale(1.05) rotate(0deg) !important;
+                                    box-shadow: var(--shadow-hover);
+                                    z-index: 10;
                                 }
 
                                 @media (max-width: 768px) {
@@ -126,7 +186,7 @@ const Home = () => {
                                     }
                                     .slider-wrapper {
                                         animation-duration: 20s;
-                                        gap: 15px;
+                                        gap: 20px;
                                     }
                                 }
                             `}

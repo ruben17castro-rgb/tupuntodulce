@@ -29,12 +29,13 @@ const ProductCard = ({ product, onSelect }) => {
             whileHover={{ y: -5, boxShadow: 'var(--shadow-md)' }}
             transition={{ duration: 0.4, ease: "easeOut" }}
             style={{
-                backgroundColor: 'white',
+                backgroundColor: 'rgba(255, 255, 255, 0.85)',
+                backdropFilter: 'blur(10px)',
                 borderRadius: 'var(--radius-md)',
                 overflow: 'hidden',
                 boxShadow: 'var(--shadow-sm)',
-                transition: 'border-color 0.3s ease',
-                border: '1px solid rgba(0,0,0,0.05)',
+                transition: 'var(--transition)',
+                border: '1px solid rgba(255, 255, 255, 0.5)',
                 display: 'flex',
                 flexDirection: 'column',
                 cursor: 'pointer'
@@ -45,19 +46,20 @@ const ProductCard = ({ product, onSelect }) => {
                 paddingTop: '100%',
                 overflow: 'hidden'
             }}>
-                <img
+                <motion.img
                     key={`img-${productId}`}
                     src={product.image}
                     alt={product.name}
                     className="product-image"
+                    whileHover={{ scale: 1.05 }}
+                    transition={{ duration: 0.4 }}
                     style={{
                         position: 'absolute',
                         top: 0,
                         left: 0,
                         width: '100%',
                         height: '100%',
-                        objectFit: 'cover',
-                        transition: 'transform 0.5s ease'
+                        objectFit: 'cover'
                     }}
                 />
                 {isOutOfStock && (
@@ -153,25 +155,36 @@ const ProductCard = ({ product, onSelect }) => {
                         className="btn btn-primary"
                         disabled={isOutOfStock}
                         whileTap={{ scale: 0.95 }}
+                        whileHover={!isOutOfStock ? { scale: 1.02 } : {}}
                         style={{
-                            padding: '8px 12px',
-                            fontSize: '0.85rem',
+                            padding: '10px 16px',
+                            fontSize: '0.9rem',
                             display: 'flex',
-                            gap: '4px',
+                            gap: '6px',
+                            alignItems: 'center',
                             backgroundColor: isOutOfStock ? '#ccc' : 'var(--color-primary)',
                             cursor: isOutOfStock ? 'not-allowed' : 'pointer',
                             border: 'none',
                             color: 'white',
-                            borderRadius: '20px'
+                            borderRadius: 'var(--radius-full)',
+                            boxShadow: isOutOfStock ? 'none' : '0 4px 6px rgba(212, 163, 115, 0.3)'
                         }}
                     >
                         {isOutOfStock ? (
                             <span key={`label-out-${productId}`}>Agotado</span>
                         ) : (
-                            <span key={`label-add-${productId}`} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                <Plus size={14} />
-                                Agregar
-                            </span>
+                            <>
+                                <motion.div
+                                    whileHover={{ rotate: 90 }}
+                                    transition={{ type: "spring", stiffness: 200, damping: 10 }}
+                                    style={{ display: 'flex' }}
+                                >
+                                    <Plus size={16} />
+                                </motion.div>
+                                <span key={`label-add-${productId}`}>
+                                    Agregar
+                                </span>
+                            </>
                         )}
                     </motion.button>
                 </div>
