@@ -70,17 +70,25 @@ export const CartProvider = ({ children }) => {
     // Memoize actions to prevent unnecessary re-renders of children
     const addToCart = useCallback((product, quantity = 1) => {
         if (!product || !product.id) return;
+
+        // Prevent adding if out of stock
+        const stock = product.stock !== undefined ? Number(product.stock) : Infinity;
+        if (stock <= 0) return;
+
         setCart(prev => {
             const current = Array.isArray(prev) ? prev : [];
             const existing = current.find(item => String(item.id) === String(product.id));
             if (existing) {
+                const currentQty = Number(existing.quantity) || 0;
+                const newQty = Math.min(currentQty + quantity, stock);
+
                 return current.map(item =>
                     String(item.id) === String(product.id)
-                        ? { ...item, quantity: (Number(item.quantity) || 0) + quantity }
+                        ? { ...item, quantity: newQty }
                         : item
                 );
             }
-            return [...current, { id: product.id, quantity }];
+            return [...current, { id: product.id, quantity: Math.min(quantity, stock) }];
         });
         setIsCartOpen(true);
     }, []);
@@ -90,11 +98,15 @@ export const CartProvider = ({ children }) => {
     }, []);
 
     const updateQuantity = useCallback((id, quantity) => {
-        const newQty = Math.max(1, Number(quantity) || 1);
+        const productInfo = resolvedCart.find(p => String(p.id) === String(id));
+        const stock = productInfo?.stock !== undefined ? Number(productInfo.stock) : Infinity;
+
+        const newQty = Math.min(Math.max(1, Number(quantity) || 1), stock);
+
         setCart(prev => (Array.isArray(prev) ? prev : []).map(item =>
             String(item.id) === String(id) ? { ...item, quantity: newQty } : item
         ));
-    }, []);
+    }, [resolvedCart]);
 
     const clearCart = useCallback(() => setCart([]), []);
     const toggleCart = useCallback(() => setIsCartOpen(prev => !prev), []);

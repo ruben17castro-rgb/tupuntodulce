@@ -134,7 +134,8 @@ const CartDrawer = () => {
                                                             <button
                                                                 key={`qty-pls-${item.id}`}
                                                                 onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                                                                style={{ background: 'none', color: '#666', padding: '4px' }}
+                                                                disabled={item.stock !== undefined && item.quantity >= item.stock}
+                                                                style={{ background: 'none', color: '#666', padding: '4px', opacity: (item.stock !== undefined && item.quantity >= item.stock) ? 0.5 : 1 }}
                                                             >
                                                                 <Plus size={14} />
                                                             </button>

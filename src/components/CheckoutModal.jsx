@@ -22,7 +22,7 @@ const CheckoutModal = () => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
 
         try {
@@ -51,10 +51,11 @@ const CheckoutModal = () => {
                 quantity: Number(item?.quantity) || 1
             })).filter(i => i.id);
 
-            discountStock(itemsToDiscount);
+            // AWAIT the network request so the browser doesn't kill it when we navigate away
+            await discountStock(itemsToDiscount);
 
-            // 2. Open WhatsApp
-            window.open(url, '_blank');
+            // 2. Open WhatsApp (use location.href to ensure it works after await on mobile)
+            window.location.href = url;
 
             // 3. Staggered sequence to allow DOM to breathe
             setTimeout(() => {
