@@ -33,10 +33,11 @@ const CheckoutModal = () => {
                 .join('%0A');
 
             const totalStr = (Number(cartTotal) || 0).toLocaleString('es-CL');
+            const cleanClientPhone = (formData.phone || '').toString().replace(/[^\d]/g, '');
 
             const message = `*Hola Tu Punto Dulce, quiero hacer el siguiente pedido:*%0A%0A` +
                 `*Cliente:* ${formData.name || 'N/A'}%0A` +
-                `*Teléfono:* ${formData.phone || 'N/A'}%0A` +
+                `*Teléfono:* ${cleanClientPhone || formData.phone || 'N/A'}%0A` +
                 `*Fecha Entrega:* ${formData.date || 'N/A'}%0A` +
                 `*Hora:* ${formData.time || 'N/A'}%0A` +
                 (formData.comments ? `*Comentarios:* ${formData.comments}%0A` : '') +
