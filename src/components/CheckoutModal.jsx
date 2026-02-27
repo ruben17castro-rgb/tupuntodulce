@@ -34,7 +34,8 @@ const CheckoutModal = () => {
 
             const totalStr = (Number(cartTotal) || 0).toLocaleString('es-CL');
             const cleanClientPhone = (formData.phone || '').toString().replace(/[^\d]/g, '');
-            const displayPhone = cleanClientPhone ? `+${cleanClientPhone}` : (formData.phone || 'N/A');
+            // Utilizar %2B en lugar del signo +, porque el signo + en las URL significa "espacio"
+            const displayPhone = cleanClientPhone ? `%2B${cleanClientPhone}` : (formData.phone || 'N/A');
 
             const message = `*Hola Tu Punto Dulce, quiero hacer el siguiente pedido:*%0A%0A` +
                 `*Cliente:* ${formData.name || 'N/A'}%0A` +
