@@ -54,18 +54,14 @@ const CheckoutModal = () => {
             // AWAIT the network request so the browser doesn't kill it when we navigate away
             await discountStock(itemsToDiscount);
 
-            // 2. Open WhatsApp (use location.href to ensure it works after await on mobile)
-            window.location.href = url;
+            // 2. Clear cart and close modal BEFORE navigating away!
+            clearCart();
+            closeCheckout();
 
-            // 3. Staggered sequence to allow DOM to breathe
+            // 3. Wait slightly so state updates can run, then open WhatsApp
             setTimeout(() => {
-                closeCheckout();
-                console.log("Modal closed, waiting to clear cart...");
-                setTimeout(() => {
-                    clearCart();
-                    console.log("Cart cleared.");
-                }, 800); // Give it nearly a second before clearing data
-            }, 500);
+                window.open(url, '_blank') || (window.location.href = url);
+            }, 100);
         } catch (err) {
             console.error("Critical error in checkout:", err);
             alert("Hubo un error al procesar el pedido. Por favor intenta de nuevo.");

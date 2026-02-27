@@ -80,6 +80,7 @@ export const ProductProvider = ({ children }) => {
             await discountStockFirebase(itemsToUpdate);
         } catch (err) {
             console.error("Error discounting stock:", err);
+            throw err;
         }
     }, [products]);
 
