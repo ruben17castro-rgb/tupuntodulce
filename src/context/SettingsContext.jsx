@@ -23,7 +23,7 @@ export const SettingsProvider = ({ children }) => {
             if (data) {
                 // Mezclamos con defaults para asegurar que no falten campos
                 setSettings({
-                    whatsappNumber: data.whatsappNumber || DEFAULT_SETTINGS.whatsappNumber,
+                    whatsappNumber: data.whatsappNumber !== undefined ? data.whatsappNumber : DEFAULT_SETTINGS.whatsappNumber,
                     bankDetails: { ...DEFAULT_SETTINGS.bankDetails, ...(data.bankDetails || {}) }
                 });
             }
