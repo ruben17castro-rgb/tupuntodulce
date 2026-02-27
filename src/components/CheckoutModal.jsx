@@ -43,7 +43,9 @@ const CheckoutModal = () => {
                 `%0A*Pedido:*%0A${productsList}%0A%0A` +
                 `*TOTAL:* $${totalStr}`;
 
-            const url = `https://wa.me/${whatsappNumber}?text=${message}`;
+            // Clean WhatsApp number to only contain digits
+            const cleanPhone = (whatsappNumber || '').toString().replace(/[^\d]/g, '');
+            const url = `https://wa.me/${cleanPhone}?text=${message}`;
 
             // 1. First Discount stock (Sync with storage)
             const itemsToDiscount = (Array.isArray(cart) ? cart : []).map(item => ({
