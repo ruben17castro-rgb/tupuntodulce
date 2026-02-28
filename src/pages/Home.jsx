@@ -9,7 +9,7 @@ import rollitosImg from '../assets/rollitos.jpeg';
 import galletasImg from '../assets/galletas.png';
 import galletas4Img from '../assets/galletas 4.png';
 import galletas5Img from '../assets/galletas 5.png';
-import bgHero from '../assets/bg-hero.png';
+import bgHero from '../assets/galletas matrimonio.png'; /* NEW IMAGE IMPORT */
 
 const Home = () => {
     const { products, loading } = useProducts();
@@ -68,11 +68,12 @@ const Home = () => {
                     />
 
                     <h1 style={{
-                        fontSize: '4.5rem', /* Larger impact */
+                        fontSize: '3.5rem', /* Adjusted for Montserrat */
                         fontFamily: 'var(--font-heading)',
-                        color: 'var(--color-bg)', /* Cream color for contrast against dark bg */
+                        fontWeight: '700',
+                        color: 'var(--color-bg)',
                         marginBottom: '0',
-                        letterSpacing: '1px',
+                        letterSpacing: '0px',
                         lineHeight: '1.2',
                         textShadow: '2px 4px 10px rgba(0,0,0,0.5)',
                     }}>
@@ -94,6 +95,7 @@ const Home = () => {
                         <h2 style={{
                             fontSize: '2.5rem',
                             color: 'white',
+                            fontFamily: 'var(--font-body)', /* Using Montserrat here */
                             fontWeight: '700',
                             margin: 0,
                             lineHeight: '1.3',
@@ -143,15 +145,26 @@ const Home = () => {
                     }}>
                         <style>
                             {`
-                                @keyframes slide {
+                                /*
+                                 Each image: 260px wide + 30px gap = 290px total per item.
+                                 We have 5 original images so the true width of one set is 5 * 290px = 1450px.
+                                 To loop seamlessly, we translate exactly that width.
+                                */
+                                @keyframes slideDesktop {
                                     from { transform: translateX(0); }
-                                    to { transform: translateX(-50%); }
+                                    to { transform: translateX(-1450px); }
+                                }
+                                
+                                /* Mobile calculations: 180px + 20px gap = 200px * 5 = 1000px */
+                                @keyframes slideMobile {
+                                    from { transform: translateX(0); }
+                                    to { transform: translateX(-1000px); }
                                 }
                                 
                                 .slider-wrapper {
                                     display: flex;
                                     width: max-content;
-                                    animation: slide 30s linear infinite;
+                                    animation: slideDesktop 30s linear infinite;
                                     gap: 30px;
                                     align-items: center;
                                     padding-top: 20px;
@@ -185,28 +198,35 @@ const Home = () => {
                                         height: 180px;
                                     }
                                     .slider-wrapper {
-                                        animation-duration: 20s;
+                                        animation: slideMobile 20s linear infinite;
                                         gap: 20px;
                                     }
                                 }
                             `}
                         </style>
                         <div className="slider-wrapper">
-                            {/* Original Set */}
+                            {/* Original Set (1) */}
                             <img src={rollitosImg} alt="Rollitos de Canela" className="slider-img" />
                             <img src={alfajorImg} alt="Alfajor Artesanal" className="slider-img" />
                             <img src={galletasImg} alt="Galletas Decoradas" className="slider-img" />
                             <img src={galletas4Img} alt="Galletas 4" className="slider-img" />
                             <img src={galletas5Img} alt="Galletas 5" className="slider-img" />
 
-                            {/* Duplicate Set for Seamless Loop */}
+                            {/* Duplicate Set for Seamless Loop (2) */}
                             <img src={rollitosImg} alt="Rollitos de Canela" className="slider-img" />
                             <img src={alfajorImg} alt="Alfajor Artesanal" className="slider-img" />
                             <img src={galletasImg} alt="Galletas Decoradas" className="slider-img" />
                             <img src={galletas4Img} alt="Galletas 4" className="slider-img" />
                             <img src={galletas5Img} alt="Galletas 5" className="slider-img" />
 
-                            {/* Triplicate Set for wider screens */}
+                            {/* Triplicate Set for ultra-wides (3) */}
+                            <img src={rollitosImg} alt="Rollitos de Canela" className="slider-img" />
+                            <img src={alfajorImg} alt="Alfajor Artesanal" className="slider-img" />
+                            <img src={galletasImg} alt="Galletas Decoradas" className="slider-img" />
+                            <img src={galletas4Img} alt="Galletas 4" className="slider-img" />
+                            <img src={galletas5Img} alt="Galletas 5" className="slider-img" />
+
+                            {/* Quadruplicate Set to prevent any cutting errors on large screens during swap */}
                             <img src={rollitosImg} alt="Rollitos de Canela" className="slider-img" />
                             <img src={alfajorImg} alt="Alfajor Artesanal" className="slider-img" />
                             <img src={galletasImg} alt="Galletas Decoradas" className="slider-img" />
@@ -220,7 +240,7 @@ const Home = () => {
             {/* Catalog Section */}
             <section id="catalog" style={{ padding: 'var(--spacing-xxl) 0' }}>
                 <div className="container">
-                    <h2 className="section-title">Nuestras Delicias</h2>
+                    <h2 className="section-title" style={{ fontFamily: 'var(--font-body)' }}>Productos Disponibles</h2>
 
                     {loading ? (
                         <p style={{ textAlign: 'center' }}>Cargando dulzura...</p>
