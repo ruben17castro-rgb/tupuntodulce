@@ -489,7 +489,10 @@ const AdminDashboard = () => {
                 }}>
                     <div className="no-print" style={{ padding: '15px', display: 'flex', justifyContent: 'flex-end', borderBottom: '1px solid #eee' }}>
                         <button
-                            onClick={() => window.print()}
+                            onClick={() => {
+                                // Robust print trigger for mobile
+                                setTimeout(() => window.print(), 100);
+                            }}
                             className="btn btn-secondary"
                             style={{ display: 'flex', gap: '8px', alignItems: 'center' }}
                         >
@@ -581,8 +584,8 @@ const AdminDashboard = () => {
 
             <style>{`
                 @media print {
-                    @page { margin: 0.5cm; size: portrait; }
-                    body { background: white !important; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important; margin: 0; padding: 0; }
+                    @page { margin: 1cm; size: portrait; }
+                    body { background: white !important; color: black !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
                     .no-print { display: none !important; }
                     .print-only { display: block !important; }
                     .container { padding: 0 !important; width: 100% !important; max-width: none !important; margin: 0 !important; box-shadow: none !important; }
@@ -590,26 +593,37 @@ const AdminDashboard = () => {
                     table { 
                         width: 100% !important; 
                         border-collapse: collapse !important; 
-                        border: 1px solid #333 !important; 
-                        font-size: 9pt !important; 
-                        table-layout: auto !important;
+                        border: 1px solid #000 !important; 
+                        font-size: 8pt !important; 
+                        table-layout: fixed !important; /* Forces fixed layout to avoid overflow */
                     }
                     th { 
                         background-color: #f2f2f2 !important; 
-                        border: 1px solid #333 !important; 
-                        padding: 6px !important; 
+                        border: 1px solid #000 !important; 
+                        padding: 8px 4px !important; 
                         color: black !important;
                         font-weight: bold !important;
+                        text-align: left !important;
                     }
                     td { 
-                        border: 1px solid #333 !important; 
-                        padding: 6px !important; 
+                        border: 1px solid #000 !important; 
+                        padding: 8px 4px !important; 
                         word-break: break-word !important;
                         vertical-align: top !important;
+                        color: black !important;
                     }
                     h1, p { color: black !important; margin: 5px 0 !important; }
                     
-                    /* Prevent page breaks inside rows */
+                    /* Specific column widths for better fit on small sheets */
+                    th:nth-child(1), td:nth-child(1) { width: 15%; } /* Fecha */
+                    th:nth-child(2), td:nth-child(2) { width: 20%; } /* Cliente */
+                    th:nth-child(3), td:nth-child(3) { width: 15%; } /* Entrega */
+                    th:nth-child(4), td:nth-child(4) { width: 35%; } /* Detalle */
+                    th:nth-child(5), td:nth-child(5) { width: 15%; } /* Total */
+
+                    /* Hide interactive actions during print */
+                    .no-print, button { display: none !important; }
+                    
                     tr { page-break-inside: avoid !important; }
                 }
             `}</style>
