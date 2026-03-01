@@ -9,11 +9,13 @@ import {
     setDoc,
     query,
     orderBy,
-    increment
+    increment,
+    serverTimestamp
 } from "firebase/firestore";
 import { db } from "../firebase/config";
 
 const PRODUCTS_COLLECTION = "productos";
+const ORDERS_COLLECTION = "pedidos";
 
 /**
  * Mapeo de campos Firestore (Español) -> App (Inglés)
@@ -194,4 +196,79 @@ export const subscribeToPageViews = (callback) => {
             callback(0);
         }
     });
+};
+
+/**
+ * ==========================================
+ * GESTIÓN DE PEDIDOS (ORDENES)
+ * ==========================================
+ */
+
+/**
+ * Guarda un nuevo pedido en Firestore
+ */
+export const saveOrderFirebase = async (orderData) => {
+    try {
+        const docData = {
+            clienteNombre: orderData.customerName || '',
+            clienteTelefono: orderData.customerPhone || '',
+            fechaEntrega: orderData.deliveryDate || '',
+            horaEntrega: orderData.deliveryTime || '',
+            comentarios: orderData.comments || '',
+            items: orderData.items || [],
+            total: Number(orderData.total) || 0,
+            creadoEn: serverTimestamp(),
+            estado: 'pendiente'
+        };
+        const docRef = await addDoc(collection(db, ORDERS_COLLECTION), docData);
+        return docRef.id;
+    } catch (error) {
+        console.error("Error saving order in Firebase:", error);
+        throw error;
+    }
+};
+
+/**
+ * Suscripción a los pedidos en tiempo real
+ */
+export const subscribeToOrders = (callback) => {
+    const q = query(collection(db, ORDERS_COLLECTION), orderBy("creadoEn", "desc"));
+    return onSnapshot(q, (snapshot) => {
+        const orders = snapshot.docs.map(doc => {
+            const data = doc.data();
+            // Handle timestamp safely
+            let createdAt = new Date();
+            if (data.creadoEn && typeof data.creadoEn.toDate === 'function') {
+                createdAt = data.creadoEn.toDate();
+            }
+
+            return {
+                id: doc.id,
+                customerName: data.clienteNombre,
+                customerPhone: data.clienteTelefono,
+                deliveryDate: data.fechaEntrega,
+                deliveryTime: data.horaEntrega,
+                comments: data.comentarios,
+                items: data.items,
+                total: data.total,
+                createdAt: createdAt,
+                status: data.estado
+            };
+        });
+        callback(orders);
+    }, (error) => {
+        console.error("Error subscribing to orders:", error);
+    });
+};
+
+/**
+ * Elimina un pedido (Admin)
+ */
+export const deleteOrderFirebase = async (id) => {
+    try {
+        await deleteDoc(doc(db, ORDERS_COLLECTION, id));
+    } catch (error) {
+        console.error("Error deleting order in Firebase:", error);
+        throw error;
+    }
 };

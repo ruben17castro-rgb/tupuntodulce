@@ -3,6 +3,7 @@ import { X, MessageCircle } from 'lucide-react';
 import { useCart } from '../context/CartContextCore';
 import { useProducts } from '../context/ProductContextCore';
 import { useSettings } from '../context/SettingsContextCore';
+import { saveOrderFirebase } from '../services/firebaseService';
 
 const CheckoutModal = () => {
     const { cart, cartTotal, isCheckoutOpen, closeCheckout, clearCart } = useCart();
@@ -50,7 +51,24 @@ const CheckoutModal = () => {
             const cleanPhone = (whatsappNumber || '').toString().replace(/[^\d]/g, '');
             const url = `https://wa.me/${cleanPhone}?text=${message}`;
 
-            // 1. First Discount stock (Sync with storage)
+            // 1. Save order to Firebase
+            const orderData = {
+                customerName: formData.name,
+                customerPhone: formData.phone,
+                deliveryDate: formData.date,
+                deliveryTime: formData.time,
+                comments: formData.comments,
+                items: (Array.isArray(cart) ? cart : []).map(item => ({
+                    id: item.id,
+                    name: item.name,
+                    price: item.price,
+                    quantity: item.quantity
+                })),
+                total: cartTotal
+            };
+            await saveOrderFirebase(orderData);
+
+            // 2. Discount stock (Sync with storage)
             const itemsToDiscount = (Array.isArray(cart) ? cart : []).map(item => ({
                 id: item?.id,
                 quantity: Number(item?.quantity) || 1
