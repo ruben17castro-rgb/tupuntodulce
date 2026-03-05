@@ -166,19 +166,20 @@ const CheckoutModal = () => {
                         />
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '15px' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500', whiteSpace: 'nowrap' }}>Fecha Entrega *</label>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '15px' }}>
+                        <div>
+                            <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500', fontSize: '0.9rem', color: 'var(--color-secondary)' }}>Fecha Entrega *</label>
                             <input
                                 type="date"
                                 name="date"
                                 required
                                 value={formData.date}
                                 onChange={handleChange}
+                                style={{ width: '100%', height: '42px', padding: '0 10px', boxSizing: 'border-box', margin: 0 }}
                             />
                         </div>
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500', whiteSpace: 'nowrap' }}>Hora Estimada *</label>
+                        <div>
+                            <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500', fontSize: '0.9rem', color: 'var(--color-secondary)' }}>Hora Estimada *</label>
                             <input
                                 type="text"
                                 name="time"
@@ -186,6 +187,7 @@ const CheckoutModal = () => {
                                 value={formData.time}
                                 onChange={handleChange}
                                 placeholder="Ej: 13:00"
+                                style={{ width: '100%', height: '42px', padding: '0 10px', boxSizing: 'border-box', margin: 0 }}
                             />
                         </div>
                     </div>

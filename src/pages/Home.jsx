@@ -36,7 +36,6 @@ const Home = () => {
                 backgroundImage: `url(${bgHero})`,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
-                borderBottom: '1px solid #EAE0D5',
                 overflow: 'hidden'
             }}>
                 {/* Dark overlay for readability */}
@@ -46,7 +45,7 @@ const Home = () => {
                     left: 0,
                     right: 0,
                     bottom: 0,
-                    backgroundColor: 'rgba(74, 59, 50, 0.7)', /* Warm dark chocolate overlay */
+                    background: 'linear-gradient(to bottom, rgba(74, 59, 50, 0.7) 0%, rgba(74, 59, 50, 0.7) 80%, var(--color-bg) 100%)',
                     zIndex: 1
                 }}></div>
 
@@ -68,12 +67,12 @@ const Home = () => {
                     />
 
                     <h1 style={{
-                        fontSize: '3.5rem', /* Adjusted for Montserrat */
-                        fontFamily: 'var(--font-heading)',
-                        fontWeight: '700',
-                        color: 'var(--color-bg)',
+                        fontSize: '3.5rem', /* Adjusted for Paytone One */
+                        fontFamily: "'Paytone One', sans-serif",
+                        fontWeight: '400',
+                        color: 'white',
                         marginBottom: '0',
-                        letterSpacing: '0px',
+                        letterSpacing: '2px',
                         lineHeight: '1.2',
                         textShadow: '2px 4px 10px rgba(0,0,0,0.5)',
                     }}>
@@ -83,7 +82,7 @@ const Home = () => {
                     <div style={{ marginBottom: 'var(--spacing-xl)', marginTop: 'var(--spacing-xs)' }}>
                         <p style={{
                             fontSize: '1rem',
-                            color: '#e6d5c3', /* Warm light brown/cream text */
+                            color: 'white',
                             fontWeight: '600',
                             textTransform: 'uppercase',
                             letterSpacing: '3px',
@@ -92,17 +91,6 @@ const Home = () => {
                         }}>
                             Gracias por visitarnos
                         </p>
-                        <h2 style={{
-                            fontSize: '2.5rem',
-                            color: 'white',
-                            fontFamily: 'var(--font-body)', /* Using Montserrat here */
-                            fontWeight: '700',
-                            margin: 0,
-                            lineHeight: '1.3',
-                            textShadow: '2px 4px 8px rgba(0,0,0,0.4)',
-                        }}>
-                            ¿Qué deseas pedir?
-                        </h2>
                     </div>
 
                     <button

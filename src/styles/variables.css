@@ -1,21 +1,21 @@
 :root {
   /* Brand Colors */
-  --color-primary: #4ECDC4;
+  --color-primary: #53A69C;
   /* Mint/Turquoise */
-  --color-primary-dark: #3DBEB6;
+  --color-primary-dark: #3F8A81;
   --color-secondary: #2D3436;
   /* Dark Grey */
   --color-accent: #FF6B6B;
   /* Soft Red for actions/errors */
-  --color-bg: #F9F9F9;
+  --color-bg: #E8E1D1;
   /* Light grey background */
   --color-white: #FFFFFF;
   --color-wsp: #25D366;
   /* WhatsApp brand color */
 
   /* Typography */
-  --font-heading: 'Montserrat', sans-serif;
-  --font-body: 'Montserrat', sans-serif;
+  --font-heading: 'Sora', sans-serif;
+  --font-body: 'Sora', sans-serif;
 
   /* Spacing */
   --spacing-xs: 4px;
