@@ -66,7 +66,11 @@ const CheckoutModal = () => {
                 })),
                 total: cartTotal
             };
-            await saveOrderFirebase(orderData);
+            try {
+                await saveOrderFirebase(orderData);
+            } catch (firebaseErr) {
+                console.error("Non-critical error: could not save order to Firebase", firebaseErr);
+            }
 
             // 2. Discount stock (Sync with storage)
             const itemsToDiscount = (Array.isArray(cart) ? cart : []).map(item => ({
@@ -75,7 +79,11 @@ const CheckoutModal = () => {
             })).filter(i => i.id);
 
             // AWAIT the network request so the browser doesn't kill it when we navigate away
-            await discountStock(itemsToDiscount);
+            try {
+                await discountStock(itemsToDiscount);
+            } catch (stockErr) {
+                console.error("Non-critical error: could not discount stock", stockErr);
+            }
 
             // 2. Clear cart and close modal BEFORE navigating away!
             clearCart();

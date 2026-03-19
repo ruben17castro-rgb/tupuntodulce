@@ -14,6 +14,7 @@ const ProductForm = ({ product, onSave, onCancel }) => {
 
     useEffect(() => {
         if (product) {
+            // eslint-disable-next-line
             setFormData({
                 ...product,
                 stock: product.stock !== undefined ? product.stock : 0

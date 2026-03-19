@@ -157,7 +157,7 @@ export const decrementStock = (cartItems) => {
         let products = [];
         try {
             products = stored ? JSON.parse(stored) : SEED_DATA;
-        } catch (e) {
+        } catch {
             products = SEED_DATA;
         }
 
