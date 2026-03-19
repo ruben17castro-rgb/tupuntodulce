@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, MessageCircle } from 'lucide-react';
+import { X, MessageCircle, Copy, Check } from 'lucide-react';
 import { useCart } from '../context/CartContextCore';
 import { useProducts } from '../context/ProductContextCore';
 import { useSettings } from '../context/SettingsContextCore';
@@ -16,6 +16,23 @@ const CheckoutModal = () => {
         time: '',
         comments: ''
     });
+
+    const [copiedField, setCopiedField] = useState(null);
+
+    const copyToClipboard = async (text, fieldName) => {
+        try {
+            await navigator.clipboard.writeText(text);
+            setCopiedField(fieldName);
+            setTimeout(() => setCopiedField(null), 2000);
+        } catch (err) {
+            console.error('Failed to copy text: ', err);
+        }
+    };
+
+    const copyAllBankDetails = () => {
+        const text = `Banco: ${bankDetails.bank}\nTipo: ${bankDetails.type}\nNúmero: ${bankDetails.number}\nRUT: ${bankDetails.rut}\nNombre: ${bankDetails.name}\nEmail: ${bankDetails.email}`;
+        copyToClipboard(text, 'all');
+    };
 
     if (!isCheckoutOpen) return null;
 
@@ -224,10 +241,40 @@ const CheckoutModal = () => {
                                 <div style={{ fontSize: '0.85rem', color: '#444' }}>
                                     <p><strong>Banco:</strong> {bankDetails.bank}</p>
                                     <p><strong>Tipo:</strong> {bankDetails.type}</p>
-                                    <p><strong>Número:</strong> {bankDetails.number}</p>
+                                    <p style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <strong>Número:</strong> {bankDetails.number}
+                                        <button 
+                                            type="button" 
+                                            onClick={() => copyToClipboard(bankDetails.number, 'number')}
+                                            style={{ background: 'none', color: copiedField === 'number' ? '#10b981' : '#64748b', border: 'none', cursor: 'pointer', padding: '2px' }}
+                                            title="Copiar solo número"
+                                        >
+                                            {copiedField === 'number' ? <Check size={16} /> : <Copy size={16} />}
+                                        </button>
+                                    </p>
                                     <p><strong>RUT:</strong> {bankDetails.rut}</p>
                                     <p><strong>Nombre:</strong> {bankDetails.name}</p>
                                     <p><strong>Email:</strong> {bankDetails.email}</p>
+                                    <button 
+                                        type="button" 
+                                        onClick={copyAllBankDetails}
+                                        style={{
+                                            marginTop: '8px',
+                                            padding: '6px 12px',
+                                            backgroundColor: '#f1f5f9',
+                                            border: '1px solid #cbd5e1',
+                                            borderRadius: 'var(--radius-sm)',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '6px',
+                                            cursor: 'pointer',
+                                            color: copiedField === 'all' ? '#10b981' : '#475569',
+                                            fontSize: '0.85rem'
+                                        }}
+                                    >
+                                        {copiedField === 'all' ? <Check size={16} /> : <Copy size={16} />}
+                                        {copiedField === 'all' ? 'Datos Copiados' : 'Copiar Todos los Datos'}
+                                    </button>
                                 </div>
                             );
                         })()}
@@ -241,7 +288,7 @@ const CheckoutModal = () => {
                         border: '1px solid #dcfce7'
                     }}>
                         <p style={{ fontSize: '0.9rem', color: '#166534' }}>
-                            Al confirmar, se abrirá WhatsApp con los detalles de tu pedido. **Por favor adjunta el comprobante de transferencia al mensaje.**
+                            Al confirmar, se abrirá WhatsApp con los detalles de tu pedido. <strong>Por favor adjunta el comprobante de transferencia al mensaje.</strong>
                         </p>
                     </div>
 
