@@ -3,16 +3,17 @@ import { useProducts } from '../context/ProductContextCore';
 import { useSettings } from '../context/SettingsContextCore';
 import { Plus, Edit2, Trash2, Eye, EyeOff, Lock, MessageCircle, Save, X as XIcon, LogOut, BarChart2 } from 'lucide-react';
 import ProductForm from '../components/ProductForm';
+import OrderForm from '../components/OrderForm';
 import { useAuth } from '../context/AuthContext';
 import {
     subscribeToPageViews,
     subscribeToOrders,
-    deleteOrderFirebase
+    deleteOrderFirebase,
+    saveOrderFirebase
 } from '../services/firebaseService';
 
-
 const AdminDashboard = () => {
-    const { products, addProduct, updateProduct, removeProduct, toggleStatus } = useProducts();
+    const { products, addProduct, updateProduct, removeProduct, toggleStatus, discountStock } = useProducts();
     const { whatsappNumber, bankDetails, updateWhatsAppNumber, updateBankDetails } = useSettings();
     const { logout } = useAuth();
     const [editingProduct, setEditingProduct] = useState(null);
@@ -21,6 +22,7 @@ const AdminDashboard = () => {
     const [activeTab, setActiveTab] = useState('products'); // 'products' or 'orders'
 
     const [isFormOpen, setIsFormOpen] = useState(false);
+    const [isOrderFormOpen, setIsOrderFormOpen] = useState(false);
 
     // Subscribe to page views
     useEffect(() => {
@@ -117,6 +119,27 @@ const AdminDashboard = () => {
         } catch (error) {
             console.error("Error al guardar:", error);
             alert(error.message || "Ocurrió un error al guardar el producto.");
+        }
+    };
+
+    const handleAddOrder = () => setIsOrderFormOpen(true);
+
+    const handleSaveOrder = async (orderData) => {
+        try {
+            await saveOrderFirebase(orderData);
+            
+            // Descontar stock (igual que en CheckoutModal)
+            const itemsToDiscount = orderData.items.map(item => ({
+                id: item.id,
+                quantity: item.quantity
+            }));
+            await discountStock(itemsToDiscount);
+            
+            setIsOrderFormOpen(false);
+            alert("Pedido manual agregado exitosamente.");
+        } catch (error) {
+            console.error("Error al guardar pedido manual:", error);
+            alert("Hubo un error al guardar el pedido.");
         }
     };
 
@@ -487,7 +510,15 @@ const AdminDashboard = () => {
                     overflow: 'hidden',
                     position: 'relative'
                 }}>
-                    <div className="no-print" style={{ padding: '15px', display: 'flex', justifyContent: 'flex-end', borderBottom: '1px solid #eee' }}>
+                    <div className="no-print" style={{ padding: '15px', display: 'flex', justifyContent: 'flex-end', gap: '10px', borderBottom: '1px solid #eee' }}>
+                        <button
+                            onClick={handleAddOrder}
+                            className="btn btn-primary"
+                            style={{ display: 'flex', gap: '8px', alignItems: 'center' }}
+                        >
+                            <Plus size={18} />
+                            Ingresar Pedido Manual
+                        </button>
                         <button
                             onClick={() => {
                                 // Robust print trigger for mobile
@@ -579,6 +610,14 @@ const AdminDashboard = () => {
                     product={editingProduct}
                     onSave={handleSave}
                     onCancel={() => setIsFormOpen(false)}
+                />
+            )}
+
+            {isOrderFormOpen && (
+                <OrderForm
+                    products={products}
+                    onSave={handleSaveOrder}
+                    onCancel={() => setIsOrderFormOpen(false)}
                 />
             )}
 

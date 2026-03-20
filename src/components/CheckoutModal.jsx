@@ -66,7 +66,7 @@ const CheckoutModal = () => {
 
             // Clean WhatsApp number to only contain digits
             const cleanPhone = (whatsappNumber || '').toString().replace(/[^\d]/g, '');
-            const url = `https://wa.me/${cleanPhone}?text=${message}`;
+            let finalUrl = `https://wa.me/${cleanPhone}?text=${message}`;
 
             // 1. Save order to Firebase
             const orderData = {
@@ -86,7 +86,10 @@ const CheckoutModal = () => {
             try {
                 await saveOrderFirebase(orderData);
             } catch (firebaseErr) {
-                console.error("Non-critical error: could not save order to Firebase", firebaseErr);
+                console.error("Error al guardar el pedido en Firebase:", firebaseErr);
+                // Si falla Firebase, agregamos una nota discreta al final del mensaje de WhatsApp para que el admin lo sepa
+                const extraMsg = "%0A%0A_⚠️ Msje automático interno: Este pedido NO quedó guardado en el Panel Administrativo. Por favor, regístralo manualmente._";
+                finalUrl = `https://wa.me/${cleanPhone}?text=${message}${extraMsg}`;
             }
 
             // 2. Discount stock (Sync with storage)
@@ -108,7 +111,7 @@ const CheckoutModal = () => {
 
             // 3. Wait slightly so state updates can run, then open WhatsApp
             setTimeout(() => {
-                window.open(url, '_blank') || (window.location.href = url);
+                window.open(finalUrl, '_blank') || (window.location.href = finalUrl);
             }, 100);
         } catch (err) {
             console.error("Critical error in checkout:", err);

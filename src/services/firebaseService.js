@@ -141,13 +141,16 @@ export const getSettingsFirebase = async () => {
 /**
  * Suscripción a la configuración global
  */
-export const subscribeToSettings = (callback) => {
+export const subscribeToSettings = (callback, onError) => {
     return onSnapshot(doc(db, CONFIG_COLLECTION, SETTINGS_DOC), (docSnap) => {
         if (docSnap.exists()) {
             callback(docSnap.data());
         } else {
             callback(null);
         }
+    }, (error) => {
+        console.error("Error subscribing to settings:", error);
+        if (onError) onError(error);
     });
 };
 

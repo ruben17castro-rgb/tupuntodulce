@@ -28,6 +28,9 @@ export const SettingsProvider = ({ children }) => {
                 });
             }
             setLoading(false);
+        }, (error) => {
+            console.error("No se pudo cargar la configuración de Firebase. Se usarán los valores por defecto. Error:", error.message);
+            setLoading(false); // Liberar estado de carga si hay error de permisos
         });
 
         return () => {
