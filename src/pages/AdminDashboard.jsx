@@ -214,18 +214,18 @@ const AdminDashboard = () => {
             {/* Top Stats Section */}
             <div className="no-print" style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
                 gap: '20px',
                 marginBottom: '30px'
             }}>
                 <div style={{
                     backgroundColor: 'white',
-                    padding: '24px',
+                    padding: '20px',
                     borderRadius: 'var(--radius-md)',
                     boxShadow: 'var(--shadow-sm)',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '20px'
+                    gap: '15px'
                 }}>
                     <div style={{
                         backgroundColor: '#eff6ff',
@@ -233,13 +233,14 @@ const AdminDashboard = () => {
                         borderRadius: '50%',
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'center'
+                        justifyContent: 'center',
+                        flexShrink: 0
                     }}>
                         <BarChart2 size={32} color="#3b82f6" />
                     </div>
-                    <div>
-                        <p style={{ margin: 0, color: '#64748b', fontSize: '0.9rem', fontWeight: '500' }}>{activeTab === 'products' ? 'Visitas Totales' : 'Ventas del Mes'}</p>
-                        <h2 style={{ margin: 0, fontSize: '2rem', color: '#1e293b' }}>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                        <p style={{ margin: 0, color: '#64748b', fontSize: '0.9rem', fontWeight: '500', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{activeTab === 'products' ? 'Visitas Totales' : 'Ventas del Mes'}</p>
+                        <h2 style={{ margin: 0, fontSize: '1.75rem', color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                             {activeTab === 'products' ? pageViews : `$${stats.totalSales.toLocaleString('es-CL')}`}
                         </h2>
                     </div>
@@ -249,12 +250,12 @@ const AdminDashboard = () => {
                     <>
                         <div style={{
                             backgroundColor: 'white',
-                            padding: '24px',
+                            padding: '20px',
                             borderRadius: 'var(--radius-md)',
                             boxShadow: 'var(--shadow-sm)',
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '20px'
+                            gap: '15px'
                         }}>
                             <div style={{
                                 backgroundColor: '#f0fdf4',
@@ -262,23 +263,24 @@ const AdminDashboard = () => {
                                 borderRadius: '50%',
                                 display: 'flex',
                                 alignItems: 'center',
-                                justifyContent: 'center'
+                                justifyContent: 'center',
+                                flexShrink: 0
                             }}>
                                 <Save size={32} color="#22c55e" />
                             </div>
-                            <div>
-                                <p style={{ margin: 0, color: '#64748b', fontSize: '0.9rem', fontWeight: '500' }}>Pedido Promedio</p>
-                                <h2 style={{ margin: 0, fontSize: '2rem', color: '#1e293b' }}>${stats.avgOrder.toLocaleString('es-CL')}</h2>
+                            <div style={{ minWidth: 0, flex: 1 }}>
+                                <p style={{ margin: 0, color: '#64748b', fontSize: '0.9rem', fontWeight: '500', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Pedido Promedio</p>
+                                <h2 style={{ margin: 0, fontSize: '1.75rem', color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>${stats.avgOrder.toLocaleString('es-CL')}</h2>
                             </div>
                         </div>
                         <div style={{
                             backgroundColor: 'white',
-                            padding: '24px',
+                            padding: '20px',
                             borderRadius: 'var(--radius-md)',
                             boxShadow: 'var(--shadow-sm)',
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '20px'
+                            gap: '15px'
                         }}>
                             <div style={{
                                 backgroundColor: '#fef2f2',
@@ -286,13 +288,14 @@ const AdminDashboard = () => {
                                 borderRadius: '50%',
                                 display: 'flex',
                                 alignItems: 'center',
-                                justifyContent: 'center'
+                                justifyContent: 'center',
+                                flexShrink: 0
                             }}>
                                 <MessageCircle size={32} color="#ef4444" />
                             </div>
-                            <div>
-                                <p style={{ margin: 0, color: '#64748b', fontSize: '0.9rem', fontWeight: '500' }}>Pedidos este Mes</p>
-                                <h2 style={{ margin: 0, fontSize: '2rem', color: '#1e293b' }}>{stats.count}</h2>
+                            <div style={{ minWidth: 0, flex: 1 }}>
+                                <p style={{ margin: 0, color: '#64748b', fontSize: '0.9rem', fontWeight: '500', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Pedidos este Mes</p>
+                                <h2 style={{ margin: 0, fontSize: '1.75rem', color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{stats.count}</h2>
                             </div>
                         </div>
                     </>
@@ -510,7 +513,7 @@ const AdminDashboard = () => {
                     overflow: 'hidden',
                     position: 'relative'
                 }}>
-                    <div className="no-print" style={{ padding: '15px', display: 'flex', justifyContent: 'flex-end', gap: '10px', borderBottom: '1px solid #eee' }}>
+                    <div className="no-print" style={{ padding: '15px', display: 'flex', flexWrap: 'wrap', justifyContent: 'flex-end', gap: '10px', borderBottom: '1px solid #eee' }}>
                         <button
                             onClick={handleAddOrder}
                             className="btn btn-primary"
@@ -521,8 +524,7 @@ const AdminDashboard = () => {
                         </button>
                         <button
                             onClick={() => {
-                                // Robust print trigger for mobile
-                                setTimeout(() => window.print(), 100);
+                                window.print();
                             }}
                             className="btn btn-secondary"
                             style={{ display: 'flex', gap: '8px', alignItems: 'center' }}
