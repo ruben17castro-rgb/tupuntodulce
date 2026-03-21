@@ -6,10 +6,17 @@
 html, body {
   margin: 0;
   padding: 0;
+  overflow-x: hidden;
+  width: 100%;
   min-height: 100vh;
   font-family: var(--font-body, system-ui, sans-serif);
   background-color: var(--color-background, #fff);
   color: var(--color-text, #333);
+}
+
+img, svg {
+  max-width: 100%;
+  height: auto;
 }
 
 h1, h2, h3, h4, h5, h6, p {

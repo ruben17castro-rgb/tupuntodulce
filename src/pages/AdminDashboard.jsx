@@ -513,10 +513,10 @@ const AdminDashboard = () => {
                     overflow: 'hidden',
                     position: 'relative'
                 }}>
-                    <div className="no-print" style={{ padding: '15px', display: 'flex', flexWrap: 'wrap', justifyContent: 'flex-end', gap: '10px', borderBottom: '1px solid #eee' }}>
+                    <div className="no-print button-group" style={{ padding: '15px', display: 'flex', flexWrap: 'wrap', justifyContent: 'flex-end', gap: '10px', borderBottom: '1px solid #eee' }}>
                         <button
                             onClick={handleAddOrder}
-                            className="btn btn-primary"
+                            className="btn btn-primary btn-mobile-full"
                             style={{ display: 'flex', gap: '8px', alignItems: 'center' }}
                         >
                             <Plus size={18} />
@@ -524,10 +524,15 @@ const AdminDashboard = () => {
                         </button>
                         <button
                             onClick={() => {
-                                window.print();
+                                setTimeout(() => { window.print(); }, 300);
                             }}
-                            className="btn btn-secondary"
-                            style={{ display: 'flex', gap: '8px', alignItems: 'center' }}
+                            className="btn btn-secondary btn-mobile-full print-btn"
+                            style={{ 
+                                display: 'flex', gap: '8px', alignItems: 'center',
+                                touchAction: 'manipulation',
+                                WebkitTapHighlightColor: 'transparent',
+                                cursor: 'pointer'
+                            }}
                         >
                             <BarChart2 size={18} />
                             Imprimir Reporte
@@ -539,7 +544,7 @@ const AdminDashboard = () => {
                         <p style={{ margin: 0 }}>Generado el {new Date().toLocaleDateString('es-CL')} a las {new Date().toLocaleTimeString('es-CL')}</p>
                     </div>
 
-                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <table className="orders-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
                         <thead style={{ backgroundColor: '#f9f9f9', borderBottom: '1px solid #eee' }}>
                             <tr>
                                 <th style={{ padding: '15px', textAlign: 'left' }}>Fecha</th>
@@ -599,6 +604,50 @@ const AdminDashboard = () => {
                         </tbody>
                     </table>
 
+                    <div className="orders-mobile print-only-hide">
+                        {orders.map(order => (
+                            <div key={order.id} className="mobile-order-card">
+                                <div className="moc-header">
+                                    <span className="moc-date">{new Date(order.createdAt).toLocaleDateString('es-CL')}</span>
+                                    <button
+                                        onClick={() => {
+                                            if (window.confirm('¿Estás seguro de eliminar este pedido del historial?')) {
+                                                deleteOrderFirebase(order.id);
+                                            }
+                                        }}
+                                        className="moc-delete"
+                                        title="Eliminar de historial"
+                                    >
+                                        <Trash2 size={16} />
+                                    </button>
+                                </div>
+                                <div className="moc-customer">
+                                    <strong>{order.customerName}</strong>
+                                    <span>{order.customerPhone}</span>
+                                </div>
+                                <div className="moc-delivery">
+                                    <span>Entrega: {order.deliveryDate}</span>
+                                    <span className="moc-time">{order.deliveryTime}</span>
+                                </div>
+                                <div className="moc-products">
+                                    <ul>
+                                        {order.items.map((item, idx) => (
+                                            <li key={idx}>
+                                                {item.name} x{item.quantity}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                    {order.comments && (
+                                        <div className="moc-comments">"{order.comments}"</div>
+                                    )}
+                                </div>
+                                <div className="moc-total">
+                                    Total: ${order.total.toLocaleString('es-CL')}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
                     {orders.length === 0 && (
                         <div style={{ padding: '40px', textAlign: 'center', color: '#999' }}>
                             No hay pedidos registrados.
@@ -624,6 +673,156 @@ const AdminDashboard = () => {
             )}
 
             <style>{`
+                /* MOBILE STYLES */
+                .orders-mobile { display: none; }
+
+                @media (max-width: 480px) {
+                    /* Container override */
+                    .container { width: 100% !important; padding: 16px 14px !important; box-sizing: border-box !important; }
+                    
+                    /* Buttons inside Admin Dashboard */
+                    .btn-mobile-full { width: 100% !important; min-height: 44px !important; justify-content: center !important; }
+                    .button-group { flex-direction: column !important; }
+
+                    /* Metric cards into 100% or 2 columns */
+                    div[style*="grid-template-columns: repeat(auto-fit, minmax(240px, 1fr))"] {
+                        grid-template-columns: 1fr 1fr !important;
+                        gap: 12px !important;
+                    }
+                    /* Overriding specifically the stat cards */
+                    div[style*="minmax(240px, 1fr)"] > div {
+                        padding: 12px !important;
+                        flex-direction: column !important;
+                        align-items: flex-start !important;
+                        gap: 8px !important;
+                        box-sizing: border-box;
+                    }
+                    div[style*="minmax(240px, 1fr)"] > div > div:first-child {
+                        padding: 10px !important;
+                    }
+                    div[style*="minmax(240px, 1fr)"] > div h2 {
+                        font-size: 1.25rem !important;
+                    }
+                    div[style*="minmax(240px, 1fr)"] > div p {
+                        font-size: 0.8rem !important;
+                    }
+
+                    /* Orders Table to Cards */
+                    .orders-table { display: none !important; }
+                    .orders-mobile { 
+                        display: flex !important; 
+                        flex-direction: column;
+                        gap: 16px;
+                        padding: 16px 0;
+                    }
+                    .print-only-hide { display: block; }
+
+                    .mobile-order-card {
+                        background: white;
+                        border: 1px solid #e2e8f0;
+                        border-radius: 8px;
+                        padding: 16px;
+                        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+                        display: flex;
+                        flex-direction: column;
+                        gap: 10px;
+                        box-sizing: border-box;
+                    }
+                    .moc-header {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                    }
+                    .moc-date {
+                        font-size: 0.8rem;
+                        color: #64748b;
+                        background: #f1f5f9;
+                        padding: 4px 8px;
+                        border-radius: 4px;
+                        font-weight: 500;
+                    }
+                    .moc-delete {
+                        background: none;
+                        color: #ef4444;
+                        padding: 6px;
+                        cursor: pointer;
+                        border: none;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        border-radius: 4px;
+                    }
+                    .moc-customer {
+                        display: flex;
+                        flex-direction: column;
+                        font-size: 1.05rem;
+                        color: #0f172a;
+                    }
+                    .moc-customer span {
+                        font-size: 0.85rem;
+                        color: #64748b;
+                        font-weight: normal;
+                        margin-top: 2px;
+                    }
+                    .moc-delivery {
+                        background: #f0fdf4;
+                        padding: 10px;
+                        border-radius: 6px;
+                        font-size: 0.85rem;
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        border: 1px solid #dcfce7;
+                        color: #166534;
+                    }
+                    .moc-time {
+                        font-weight: 700;
+                        font-size: 0.9rem;
+                    }
+                    .moc-products {
+                        font-size: 0.9rem;
+                        border-top: 1px dashed #e2e8f0;
+                        padding-top: 10px;
+                        color: #334155;
+                    }
+                    .moc-products ul {
+                        margin: 0;
+                        padding-left: 20px;
+                    }
+                    .moc-products li {
+                        margin-bottom: 4px;
+                    }
+                    .moc-comments {
+                        font-size: 0.85rem;
+                        color: #64748b;
+                        font-style: italic;
+                        margin-top: 8px;
+                        padding: 8px;
+                        background: #f8fafc;
+                        border-radius: 4px;
+                    }
+                    .moc-total {
+                        font-weight: 700;
+                        font-size: 1.15rem;
+                        color: #0f172a;
+                        text-align: right;
+                        border-top: 1px solid #e2e8f0;
+                        padding-top: 10px;
+                    }
+                }
+
+                /* MOBILE LANDSCAPE STYLES */
+                @media (max-height: 500px) and (orientation: landscape) {
+                    .container { padding: 12px 16px !important; box-sizing: border-box !important; }
+                    .mobile-order-card { padding: 12px !important; }
+                    /* Overriding specifically the stat cards */
+                    div[style*="minmax(240px, 1fr)"] > div {
+                        flex-direction: row !important;
+                        align-items: center !important;
+                        padding: 12px !important;
+                    }
+                }
+
                 @media print {
                     @page { margin: 1cm; size: portrait; }
                     body { background: white !important; color: black !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
