@@ -52,12 +52,13 @@ const CheckoutModal = () => {
 
             const totalStr = (Number(cartTotal) || 0).toLocaleString('es-CL');
             const cleanClientPhone = (formData.phone || '').toString().replace(/[^\d]/g, '');
+            const fullPhoneForm = cleanClientPhone ? `+56${cleanClientPhone}` : `+56 ${formData.phone}`;
             // Utilizar %2B en lugar del signo +, porque el signo + en las URL significa "espacio"
-            const displayPhone = cleanClientPhone ? `%2B${cleanClientPhone}` : (formData.phone || 'N/A');
+            const urlPhone = cleanClientPhone ? `%2B56${cleanClientPhone}` : `%2B56 ${formData.phone}`;
 
             const message = `*Hola Tu Punto Dulce, quiero hacer el siguiente pedido:*%0A%0A` +
                 `*Cliente:* ${formData.name || 'N/A'}%0A` +
-                `*Teléfono:* ${displayPhone}%0A` +
+                `*Teléfono:* ${urlPhone}%0A` +
                 `*Fecha Entrega:* ${formData.date || 'N/A'}%0A` +
                 `*Hora:* ${formData.time || 'N/A'}%0A` +
                 (formData.comments ? `*Comentarios:* ${formData.comments}%0A` : '') +
@@ -71,7 +72,7 @@ const CheckoutModal = () => {
             // 1. Save order to Firebase
             const orderData = {
                 customerName: formData.name,
-                customerPhone: formData.phone,
+                customerPhone: fullPhoneForm,
                 deliveryDate: formData.date,
                 deliveryTime: formData.time,
                 comments: formData.comments,
@@ -184,14 +185,31 @@ const CheckoutModal = () => {
 
                     <div style={{ marginBottom: '15px' }}>
                         <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Teléfono *</label>
-                        <input
-                            type="tel"
-                            name="phone"
-                            required
-                            value={formData.phone}
-                            onChange={handleChange}
-                            placeholder="+56 9 1234 5678"
-                        />
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{
+                                padding: '12px 14px',
+                                backgroundColor: '#f1f5f9',
+                                border: '1px solid #e2e8f0',
+                                borderRadius: '8px',
+                                color: '#475569',
+                                fontWeight: '500',
+                                fontSize: '1rem',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                            }}>
+                                +56
+                            </span>
+                            <input
+                                type="tel"
+                                name="phone"
+                                required
+                                value={formData.phone}
+                                onChange={handleChange}
+                                placeholder="9 1234 5678"
+                                style={{ margin: 0, flex: 1 }}
+                            />
+                        </div>
                     </div>
 
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '15px' }}>
