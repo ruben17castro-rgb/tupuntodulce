@@ -40,6 +40,22 @@ const AdminDashboard = () => {
         return () => unsubscribe();
     }, []);
 
+    // Print button event listener (Problema 2 - CAUSA B)
+    useEffect(() => {
+        const btnImprimir = document.querySelector('[data-action="imprimir"]');
+        if (!btnImprimir) return;
+
+        const handlePrint = function(e) {
+            e.preventDefault();
+            setTimeout(function() {
+                window.print();
+            }, 350);
+        };
+
+        btnImprimir.addEventListener('click', handlePrint);
+        return () => btnImprimir.removeEventListener('click', handlePrint);
+    }, [activeTab]);
+
     // Monthly Sales and Average Order stats
     const stats = React.useMemo(() => {
         const now = new Date();
@@ -419,7 +435,7 @@ const AdminDashboard = () => {
                         boxShadow: 'var(--shadow-sm)',
                         overflow: 'hidden'
                     }}>
-                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                        <table className="tabla-productos" style={{ width: '100%', borderCollapse: 'collapse' }}>
                             <thead style={{ backgroundColor: '#f9f9f9', borderBottom: '1px solid #eee' }}>
                                 <tr>
                                     <th style={{ padding: '15px', textAlign: 'left' }}>Producto</th>
@@ -498,6 +514,50 @@ const AdminDashboard = () => {
                             </tbody>
                         </table>
 
+                        <div className="productos-cards">
+                            {products.map(product => (
+                                <div key={product.id} className="admin-product-card">
+                                    <div className="top-row">
+                                        <img src={product.image} alt={product.name} style={{ opacity: product.active ? 1 : 0.5 }} />
+                                        <div>
+                                            <div style={{ fontWeight: '600' }}>{product.name}</div>
+                                            <div style={{ fontSize: '0.85rem', color: '#888' }}>ID: {product.id}</div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="meta-row">
+                                        <div><strong>Precio:</strong> ${product.price.toLocaleString('es-CL')}</div>
+                                        <div style={{ color: (!product.stock || product.stock > 0) ? 'inherit' : '#e74c3c' }}>
+                                            <strong>Stock:</strong> {product.stock !== undefined ? product.stock : '-'}
+                                        </div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                            <strong>Estado:</strong>
+                                            <button
+                                                onClick={() => toggleStatus(product.id)}
+                                                style={{
+                                                    background: 'none', padding: 0,
+                                                    color: product.active ? 'var(--color-wsp)' : '#999',
+                                                    display: 'flex', alignItems: 'center'
+                                                }}
+                                                title={product.active ? "Desactivar" : "Activar"}
+                                            >
+                                                {product.active ? <Eye size={18} /> : <EyeOff size={18} />}
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div className="actions">
+                                        <button onClick={() => handleEdit(product)} className="btn btn-secondary" style={{ flex: 1, display: 'flex', justifyContent: 'center', gap: '5px', padding: '8px' }}>
+                                            <Edit2 size={16} /> Editar
+                                        </button>
+                                        <button onClick={() => { if (window.confirm('¿Estás seguro de eliminar este producto?')) removeProduct(product.id); }} className="btn btn-secondary" style={{ flex: 1, display: 'flex', justifyContent: 'center', gap: '5px', padding: '8px', color: '#ff6b6b' }}>
+                                            <Trash2 size={16} /> Eliminar
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
                         {products.length === 0 && (
                             <div style={{ padding: '40px', textAlign: 'center', color: '#999' }}>
                                 No hay productos registrados.
@@ -523,9 +583,7 @@ const AdminDashboard = () => {
                             Ingresar Pedido Manual
                         </button>
                         <button
-                            onClick={() => {
-                                setTimeout(() => { window.print(); }, 300);
-                            }}
+                            data-action="imprimir"
                             className="btn btn-secondary btn-mobile-full print-btn"
                             style={{ 
                                 display: 'flex', gap: '8px', alignItems: 'center',
@@ -673,6 +731,50 @@ const AdminDashboard = () => {
             )}
 
             <style>{`
+                /* PRODUCT CARDS CSS */
+                .admin-product-card {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 8px;
+                    padding: 14px;
+                    border-bottom: 1px solid #e5e5e5;
+                }
+                .admin-product-card .top-row {
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                }
+                .admin-product-card .top-row img {
+                    width: 48px;
+                    height: 48px;
+                    border-radius: 8px;
+                    object-fit: cover;
+                    flex-shrink: 0;
+                }
+                .admin-product-card .meta-row {
+                    display: flex;
+                    gap: 16px;
+                    font-size: 14px;
+                    flex-wrap: wrap;
+                    align-items: center;
+                }
+                .admin-product-card .actions {
+                    display: flex;
+                    gap: 12px;
+                    margin-top: 4px;
+                }
+
+                @media (max-width: 767px) {
+                    /* ocultar tabla */
+                    .tabla-productos { display: none !important; }
+                    /* mostrar cards */
+                    .productos-cards { display: block; }
+                }
+                @media (min-width: 768px) {
+                    .tabla-productos { display: table; }
+                    .productos-cards { display: none; }
+                }
+
                 /* MOBILE STYLES */
                 .orders-mobile { display: none; }
 
