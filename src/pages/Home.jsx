@@ -67,8 +67,8 @@ const Home = () => {
                     />
 
                     <h1 style={{
-                        fontSize: '3.5rem', /* Adjusted for Paytone One */
-                        fontFamily: "'Paytone One', sans-serif",
+                        fontSize: '3.5rem', /* Adjusted for McLaren */
+                        fontFamily: "'McLaren', sans-serif",
                         fontWeight: '400',
                         color: 'white',
                         marginBottom: '0',
