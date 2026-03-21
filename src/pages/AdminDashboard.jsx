@@ -321,15 +321,12 @@ const AdminDashboard = () => {
             {activeTab === 'products' ? (
                 <>
                     {/* Configuration Section (WhatsApp & Bank) */}
-                    <div className="no-print" style={{
+                    <div className="no-print seccion-configuracion" style={{
                         backgroundColor: 'white',
                         padding: '20px',
                         borderRadius: 'var(--radius-md)',
                         boxShadow: 'var(--shadow-sm)',
-                        marginBottom: '30px',
-                        display: 'grid',
-                        gridTemplateColumns: '1fr 2fr',
-                        gap: '30px'
+                        marginBottom: '30px'
                     }}>
                         {/* WhatsApp Config */}
                         <div style={{ borderRight: '1px solid #eee', paddingRight: '20px' }}>
@@ -584,12 +581,9 @@ const AdminDashboard = () => {
                         </button>
                         <button
                             data-action="imprimir"
-                            className="btn btn-secondary btn-mobile-full print-btn"
+                            className="btn btn-secondary btn-mobile-full print-btn btn-imprimir-fix"
                             style={{ 
-                                display: 'flex', gap: '8px', alignItems: 'center',
-                                touchAction: 'manipulation',
-                                WebkitTapHighlightColor: 'transparent',
-                                cursor: 'pointer'
+                                display: 'flex', gap: '8px', alignItems: 'center'
                             }}
                         >
                             <BarChart2 size={18} />
@@ -731,6 +725,30 @@ const AdminDashboard = () => {
             )}
 
             <style>{`
+                /* CONFIGURATION SECTION CSS */
+                .seccion-configuracion {
+                    display: flex;
+                    flex-direction: row;
+                    gap: 12px;
+                    width: 100%;
+                    box-sizing: border-box;
+                    overflow: hidden;
+                }
+                .seccion-configuracion > * {
+                    flex: 1 1 0;
+                    min-width: 0;
+                    box-sizing: border-box;
+                    overflow: hidden;
+                    word-break: break-word;
+                }
+
+                /* PRINT BUTTON iOS FIX */
+                .btn-imprimir-fix {
+                    touch-action: manipulation;
+                    -webkit-tap-highlight-color: transparent;
+                    cursor: pointer;
+                }
+
                 /* PRODUCT CARDS CSS */
                 .admin-product-card {
                     display: flex;
