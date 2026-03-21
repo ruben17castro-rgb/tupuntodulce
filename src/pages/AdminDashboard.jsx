@@ -40,21 +40,90 @@ const AdminDashboard = () => {
         return () => unsubscribe();
     }, []);
 
-    // Print button event listener (Problema 2 - CAUSA B)
+    // Print button event listener (Problema 2 - CAUSA B) con nueva ventana
     useEffect(() => {
         const btnImprimir = document.querySelector('[data-action="imprimir"]');
         if (!btnImprimir) return;
 
         const handlePrint = function(e) {
             e.preventDefault();
-            setTimeout(function() {
-                window.print();
+
+            function formatPrecio(n) {
+                return '$' + Number(n).toLocaleString('es-CL');
+            }
+
+            const filas = orders.map((order, i) => {
+                const productos = order.items.map(item =>
+                    `${item.name} x${item.quantity}` + (item.price ? ` — ${formatPrecio(item.price)}` : '')
+                ).join('<br>');
+
+                return `
+                    <tr>
+                        <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: center;">${i + 1}</td>
+                        <td style="padding: 10px; border-bottom: 1px solid #ddd;">${new Date(order.createdAt).toLocaleDateString('es-CL')}</td>
+                        <td style="padding: 10px; border-bottom: 1px solid #ddd; font-weight: bold;">${order.customerName}</td>
+                        <td style="padding: 10px; border-bottom: 1px solid #ddd; color: #555;">${order.customerPhone}</td>
+                        <td style="padding: 10px; border-bottom: 1px solid #ddd;">${order.deliveryDate} ${order.deliveryTime}</td>
+                        <td style="padding: 10px; border-bottom: 1px solid #ddd; font-size: 0.9em;">${productos}</td>
+                        <td style="padding: 10px; border-bottom: 1px solid #ddd; font-weight: bold; text-align: right;">${formatPrecio(order.total)}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            const html = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Reporte de Pedidos</title>
+                <style>
+                    body { font-family: Arial, sans-serif; margin: 40px; color: #333; }
+                    table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
+                    th { background-color: #f4f4f4; padding: 12px 10px; text-align: left; border-bottom: 2px solid #ddd; font-weight: bold; }
+                    th:first-child { text-align: center; }
+                    th:last-child { text-align: right; }
+                    @page { size: letter portrait; margin: 20mm; }
+                </style>
+            </head>
+            <body>
+                <h2 style="margin: 0 0 5px 0;">Reporte de Pedidos — Tu Punto Dulce</h2>
+                <p style="margin: 0 0 20px 0; color: #666; font-size: 14px;">
+                    Generado el ${new Date().toLocaleDateString('es-CL')} a las ${new Date().toLocaleTimeString('es-CL')} · ${orders.length} pedidos
+                </p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 5%">#</th>
+                            <th style="width: 12%">Fecha pedido</th>
+                            <th style="width: 20%">Cliente</th>
+                            <th style="width: 15%">Teléfono</th>
+                            <th style="width: 15%">Entrega</th>
+                            <th style="width: 22%">Productos</th>
+                            <th style="width: 11%">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${filas}
+                    </tbody>
+                </table>
+            </body>
+            </html>
+            `;
+
+            setTimeout(() => {
+                const w = window.open('', '_blank');
+                if (w) {
+                    w.document.write(html);
+                    w.document.close();
+                    setTimeout(() => { 
+                        w.print(); 
+                    }, 400);
+                }
             }, 350);
         };
 
         btnImprimir.addEventListener('click', handlePrint);
         return () => btnImprimir.removeEventListener('click', handlePrint);
-    }, [activeTab]);
+    }, [activeTab, orders]);
 
     // Monthly Sales and Average Order stats
     const stats = React.useMemo(() => {
