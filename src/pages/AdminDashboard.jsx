@@ -54,9 +54,7 @@ const AdminDashboard = () => {
 
             const filas = orders.map((order, i) => {
                 const productos = order.items.map(item => {
-                    const productObj = products.find(p => p.id === item.id);
-                    const desc = productObj && productObj.description ? `<br><span style="color: #666; font-size: 0.85em;">- ${productObj.description}</span>` : '';
-                    return `<b>${item.name}</b> x${item.quantity}` + (item.price ? ` — ${formatPrecio(item.price)}` : '') + desc;
+                    return `<b>${item.name}</b> x${item.quantity}` + (item.price ? ` — ${formatPrecio(item.price)}` : '');
                 }).join('<br><br>');
                 
                 const commentsHtml = order.comments ? `<div style="margin-top: 8px; font-style: italic; color: #555; font-size: 0.9em;">Notas: ${order.comments}</div>` : '';
