@@ -23,6 +23,31 @@ const AdminDashboard = () => {
 
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isOrderFormOpen, setIsOrderFormOpen] = useState(false);
+    
+    // Mes seleccionado (por defecto el actual)
+    const [selectedMonth, setSelectedMonth] = useState(() => {
+        const now = new Date();
+        return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    });
+
+    const filteredOrders = React.useMemo(() => {
+        if (!selectedMonth) return orders;
+        const [year, month] = selectedMonth.split('-');
+        return orders.filter(order => {
+            if (!order.createdAt) return false;
+            const d = new Date(order.createdAt);
+            return d.getFullYear() === parseInt(year) && d.getMonth() + 1 === parseInt(month);
+        });
+    }, [orders, selectedMonth]);
+
+    // Format month for display
+    const formattedMonth = React.useMemo(() => {
+        if (!selectedMonth) return 'el Mes';
+        const [year, month] = selectedMonth.split('-');
+        const date = new Date(year, month - 1);
+        const name = date.toLocaleDateString('es-CL', { month: 'long', year: 'numeric' });
+        return 'de ' + name.charAt(0).toUpperCase() + name.slice(1);
+    }, [selectedMonth]);
 
     // Subscribe to page views
     useEffect(() => {
@@ -52,7 +77,7 @@ const AdminDashboard = () => {
                 return '$' + Number(n).toLocaleString('es-CL');
             }
 
-            const filas = orders.map((order, i) => {
+            const filas = filteredOrders.map((order, i) => {
                 const productos = order.items.map(item => {
                     return `<b>${item.name}</b> x${item.quantity}` + (item.price ? ` — ${formatPrecio(item.price)}` : '');
                 }).join('<br><br>');
@@ -89,7 +114,7 @@ const AdminDashboard = () => {
             <body>
                 <h2 style="margin: 0 0 5px 0;">Reporte de Pedidos — Tu Punto Dulce</h2>
                 <p style="margin: 0 0 20px 0; color: #666; font-size: 14px;">
-                    Generado el ${new Date().toLocaleDateString('es-CL')} a las ${new Date().toLocaleTimeString('es-CL')} · ${orders.length} pedidos
+                    Generado el ${new Date().toLocaleDateString('es-CL')} a las ${new Date().toLocaleTimeString('es-CL')} · ${filteredOrders.length} pedidos
                 </p>
                 <table>
                     <thead>
@@ -125,25 +150,19 @@ const AdminDashboard = () => {
 
         btnImprimir.addEventListener('click', handlePrint);
         return () => btnImprimir.removeEventListener('click', handlePrint);
-    }, [activeTab, orders, products]);
+    }, [activeTab, filteredOrders, products]);
 
-    // Monthly Sales and Average Order stats
+    // Montly Sales and Average Order stats
     const stats = React.useMemo(() => {
-        const now = new Date();
-        const thisMonthOrders = orders.filter(order => {
-            const orderDate = new Date(order.createdAt);
-            return orderDate.getMonth() === now.getMonth() && orderDate.getFullYear() === now.getFullYear();
-        });
-
-        const totalSales = thisMonthOrders.reduce((sum, order) => sum + (order.total || 0), 0);
-        const avgOrder = thisMonthOrders.length > 0 ? Math.round(totalSales / thisMonthOrders.length) : 0;
+        const totalSales = filteredOrders.reduce((sum, order) => sum + (order.total || 0), 0);
+        const avgOrder = filteredOrders.length > 0 ? Math.round(totalSales / filteredOrders.length) : 0;
 
         return {
             totalSales,
             avgOrder,
-            count: thisMonthOrders.length
+            count: filteredOrders.length
         };
-    }, [orders]);
+    }, [filteredOrders]);
 
     // Local state for editing (so we don't save every keystroke to Firebase)
     const [localWsp, setLocalWsp] = useState(whatsappNumber);
@@ -264,38 +283,59 @@ const AdminDashboard = () => {
                 gap: '20px',
                 marginBottom: '20px',
                 borderBottom: '1px solid #eee',
-                paddingBottom: '0'
+                paddingBottom: '0',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap'
             }}>
-                <button
-                    onClick={() => setActiveTab('products')}
-                    style={{
-                        padding: '10px 20px',
-                        background: 'none',
-                        border: 'none',
-                        borderBottom: activeTab === 'products' ? '3px solid var(--color-primary)' : '3px solid transparent',
-                        color: activeTab === 'products' ? 'var(--color-primary)' : '#666',
-                        fontWeight: activeTab === 'products' ? '600' : '400',
-                        cursor: 'pointer',
-                        fontSize: '1.1rem'
-                    }}
-                >
-                    Productos
-                </button>
-                <button
-                    onClick={() => setActiveTab('orders')}
-                    style={{
-                        padding: '10px 20px',
-                        background: 'none',
-                        border: 'none',
-                        borderBottom: activeTab === 'orders' ? '3px solid var(--color-primary)' : '3px solid transparent',
-                        color: activeTab === 'orders' ? 'var(--color-primary)' : '#666',
-                        fontWeight: activeTab === 'orders' ? '600' : '400',
-                        cursor: 'pointer',
-                        fontSize: '1.1rem'
-                    }}
-                >
-                    Pedidos
-                </button>
+                <div style={{ display: 'flex', gap: '20px' }}>
+                    <button
+                        onClick={() => setActiveTab('products')}
+                        style={{
+                            padding: '10px 20px',
+                            background: 'none',
+                            border: 'none',
+                            borderBottom: activeTab === 'products' ? '3px solid var(--color-primary)' : '3px solid transparent',
+                            color: activeTab === 'products' ? 'var(--color-primary)' : '#666',
+                            fontWeight: activeTab === 'products' ? '600' : '400',
+                            cursor: 'pointer',
+                            fontSize: '1.1rem'
+                        }}
+                    >
+                        Productos
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('orders')}
+                        style={{
+                            padding: '10px 20px',
+                            background: 'none',
+                            border: 'none',
+                            borderBottom: activeTab === 'orders' ? '3px solid var(--color-primary)' : '3px solid transparent',
+                            color: activeTab === 'orders' ? 'var(--color-primary)' : '#666',
+                            fontWeight: activeTab === 'orders' ? '600' : '400',
+                            cursor: 'pointer',
+                            fontSize: '1.1rem'
+                        }}
+                    >
+                        Pedidos
+                    </button>
+                </div>
+                {activeTab === 'orders' && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', paddingBottom: '10px' }}>
+                        <span style={{ fontSize: '0.9rem', color: '#666' }}>Filtrar por mes:</span>
+                        <input 
+                            type="month"
+                            value={selectedMonth}
+                            onChange={(e) => setSelectedMonth(e.target.value)}
+                            style={{
+                                padding: '8px 12px',
+                                borderRadius: 'var(--radius-sm)',
+                                border: '1px solid #ddd',
+                                fontSize: '0.9rem',
+                                color: '#333'
+                            }}
+                        />
+                    </div>
+                )}
             </div>
 
             {/* Top Stats Section */}
@@ -326,7 +366,7 @@ const AdminDashboard = () => {
                         <BarChart2 size={32} color="#3b82f6" />
                     </div>
                     <div style={{ minWidth: 0, flex: 1 }}>
-                        <p style={{ margin: 0, color: '#64748b', fontSize: '0.9rem', fontWeight: '500', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{activeTab === 'products' ? 'Visitas Totales' : 'Ventas del Mes'}</p>
+                        <p style={{ margin: 0, color: '#64748b', fontSize: '0.9rem', fontWeight: '500', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{activeTab === 'products' ? 'Visitas Totales' : `Ventas ${formattedMonth}`}</p>
                         <h2 style={{ margin: 0, fontSize: '1.75rem', color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                             {activeTab === 'products' ? pageViews : `$${stats.totalSales.toLocaleString('es-CL')}`}
                         </h2>
@@ -381,7 +421,7 @@ const AdminDashboard = () => {
                                 <MessageCircle size={32} color="#ef4444" />
                             </div>
                             <div style={{ minWidth: 0, flex: 1 }}>
-                                <p style={{ margin: 0, color: '#64748b', fontSize: '0.9rem', fontWeight: '500', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Pedidos este Mes</p>
+                                <p style={{ margin: 0, color: '#64748b', fontSize: '0.9rem', fontWeight: '500', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Pedidos {formattedMonth}</p>
                                 <h2 style={{ margin: 0, fontSize: '1.75rem', color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{stats.count}</h2>
                             </div>
                         </div>
@@ -679,7 +719,7 @@ const AdminDashboard = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {orders.map(order => (
+                            {filteredOrders.map(order => (
                                 <tr key={order.id} style={{ borderBottom: '1px solid #eee' }}>
                                     <td style={{ padding: '15px', verticalAlign: 'top', fontSize: '0.9rem' }}>
                                         {new Date(order.createdAt).toLocaleDateString('es-CL')}
@@ -728,7 +768,7 @@ const AdminDashboard = () => {
                     </table>
 
                     <div className="orders-mobile print-only-hide">
-                        {orders.map(order => (
+                        {filteredOrders.map(order => (
                             <div key={order.id} className="mobile-order-card">
                                 <div className="moc-header">
                                     <span className="moc-date">{new Date(order.createdAt).toLocaleDateString('es-CL')}</span>
@@ -771,9 +811,9 @@ const AdminDashboard = () => {
                         ))}
                     </div>
 
-                    {orders.length === 0 && (
+                    {filteredOrders.length === 0 && (
                         <div style={{ padding: '40px', textAlign: 'center', color: '#999' }}>
-                            No hay pedidos registrados.
+                            No hay pedidos registrados en {formattedMonth.replace('de ', '')}.
                         </div>
                     )}
                 </div>
