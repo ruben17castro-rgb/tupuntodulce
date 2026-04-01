@@ -53,19 +53,23 @@ const AdminDashboard = () => {
             }
 
             const filas = orders.map((order, i) => {
-                const productos = order.items.map(item =>
-                    `${item.name} x${item.quantity}` + (item.price ? ` — ${formatPrecio(item.price)}` : '')
-                ).join('<br>');
+                const productos = order.items.map(item => {
+                    const productObj = products.find(p => p.id === item.id);
+                    const desc = productObj && productObj.description ? `<br><span style="color: #666; font-size: 0.85em;">- ${productObj.description}</span>` : '';
+                    return `<b>${item.name}</b> x${item.quantity}` + (item.price ? ` — ${formatPrecio(item.price)}` : '') + desc;
+                }).join('<br><br>');
+                
+                const commentsHtml = order.comments ? `<div style="margin-top: 8px; font-style: italic; color: #555; font-size: 0.9em;">Notas: ${order.comments}</div>` : '';
 
                 return `
                     <tr>
-                        <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: center;">${i + 1}</td>
-                        <td style="padding: 10px; border-bottom: 1px solid #ddd;">${new Date(order.createdAt).toLocaleDateString('es-CL')}</td>
-                        <td style="padding: 10px; border-bottom: 1px solid #ddd; font-weight: bold;">${order.customerName}</td>
-                        <td style="padding: 10px; border-bottom: 1px solid #ddd; color: #555;">${order.customerPhone}</td>
-                        <td style="padding: 10px; border-bottom: 1px solid #ddd;">${order.deliveryDate} ${order.deliveryTime}</td>
-                        <td style="padding: 10px; border-bottom: 1px solid #ddd; font-size: 0.9em;">${productos}</td>
-                        <td style="padding: 10px; border-bottom: 1px solid #ddd; font-weight: bold; text-align: right;">${formatPrecio(order.total)}</td>
+                        <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: center; vertical-align: top;">${i + 1}</td>
+                        <td style="padding: 10px; border-bottom: 1px solid #ddd; vertical-align: top;">${new Date(order.createdAt).toLocaleDateString('es-CL')}</td>
+                        <td style="padding: 10px; border-bottom: 1px solid #ddd; font-weight: bold; vertical-align: top;">${order.customerName}</td>
+                        <td style="padding: 10px; border-bottom: 1px solid #ddd; color: #555; vertical-align: top;">${order.customerPhone}</td>
+                        <td style="padding: 10px; border-bottom: 1px solid #ddd; vertical-align: top;">${order.deliveryDate} ${order.deliveryTime}</td>
+                        <td style="padding: 10px; border-bottom: 1px solid #ddd; font-size: 0.9em; vertical-align: top;">${productos}${commentsHtml}</td>
+                        <td style="padding: 10px; border-bottom: 1px solid #ddd; font-weight: bold; text-align: right; vertical-align: top;">${formatPrecio(order.total)}</td>
                     </tr>
                 `;
             }).join('');
@@ -97,7 +101,7 @@ const AdminDashboard = () => {
                             <th style="width: 20%">Cliente</th>
                             <th style="width: 15%">Teléfono</th>
                             <th style="width: 15%">Entrega</th>
-                            <th style="width: 22%">Productos</th>
+                            <th style="width: 22%">Detalle Productos</th>
                             <th style="width: 11%">Total</th>
                         </tr>
                     </thead>
@@ -123,7 +127,7 @@ const AdminDashboard = () => {
 
         btnImprimir.addEventListener('click', handlePrint);
         return () => btnImprimir.removeEventListener('click', handlePrint);
-    }, [activeTab, orders]);
+    }, [activeTab, orders, products]);
 
     // Monthly Sales and Average Order stats
     const stats = React.useMemo(() => {
