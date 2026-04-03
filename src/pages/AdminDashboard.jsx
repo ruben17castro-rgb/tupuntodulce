@@ -249,42 +249,115 @@ const AdminDashboard = () => {
         }
     };
 
-    const handleDownloadCSV = () => {
+    const generatePDF = () => {
         if (!filteredOrders || filteredOrders.length === 0) {
             alert("No hay pedidos para descargar en este mes.");
             return;
         }
 
-        const headers = ["Fecha Pedido", "Cliente", "Teléfono", "Entrega Fecha", "Entrega Hora", "Detalle Productos", "Total ($)"];
-        
-        const rows = filteredOrders.map(order => {
+        const formatPrecio = (n) => '$' + Number(n).toLocaleString('es-CL');
+
+        const filas = filteredOrders.map((order, i) => {
             const date = new Date(order.createdAt).toLocaleDateString('es-CL');
-            const prods = order.items.map(item => `${item.name} x${item.quantity}`).join(' | ');
-            const comments = order.comments ? ` (Notas: ${order.comments})` : '';
-            return [
-                date,
-                order.customerName,
-                order.customerPhone,
-                order.deliveryDate,
-                order.deliveryTime,
-                `${prods}${comments}`,
-                order.total
-            ];
-        });
+            const htmlProds = order.items.map(item => `<b>${item.name}</b> x${item.quantity}`).join('<br>');
+            const commentsHtml = order.comments ? `<div style="margin-top: 5px; font-style: italic; color: #666; font-size: 0.8em;">Notas: ${order.comments}</div>` : '';
+            return `
+                <tr>
+                    <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: center; vertical-align: top;">${i + 1}</td>
+                    <td style="padding: 12px; border-bottom: 1px solid #eee; vertical-align: top; color: #555;">${date}</td>
+                    <td style="padding: 12px; border-bottom: 1px solid #eee; vertical-align: top;">
+                        <strong style="color: #333;">${order.customerName}</strong><br>
+                        <span style="font-size: 0.85em; color: #777;">${order.customerPhone}</span>
+                    </td>
+                    <td style="padding: 12px; border-bottom: 1px solid #eee; vertical-align: top; color: #555;">
+                        ${order.deliveryDate}<br>
+                        <span style="font-size: 0.85em; color: #777;">${order.deliveryTime}</span>
+                    </td>
+                    <td style="padding: 12px; border-bottom: 1px solid #eee; vertical-align: top;">
+                        ${htmlProds}${commentsHtml}
+                    </td>
+                    <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: right; vertical-align: top; font-weight: bold; color: #d32f2f;">
+                        ${formatPrecio(order.total)}
+                    </td>
+                </tr>
+            `;
+        }).join('');
 
-        const csvContent = [
-            headers.join(','),
-            ...rows.map(r => r.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
-        ].join('\n');
+        const totalAcumulado = filteredOrders.reduce((sum, order) => sum + (order.total || 0), 0);
 
-        const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.setAttribute("href", url);
-        link.setAttribute("download", `reporte_pedidos_${selectedMonth ? selectedMonth : 'todos'}.csv`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        const html = `
+            <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #333; padding: 40px; background: #fff; max-width: 800px; margin: auto;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 3px solid #d32f2f; padding-bottom: 15px; margin-bottom: 30px;">
+                    <div>
+                        <h1 style="margin: 0; color: #222; font-size: 28px; letter-spacing: -0.5px;">Tu Punto Dulce</h1>
+                        <p style="margin: 5px 0 0 0; color: #777; font-size: 14px;">Reporte Oficial de Pedidos</p>
+                    </div>
+                    <div style="text-align: right;">
+                        <p style="margin: 0; font-size: 12px; color: #999;">FECHA DE EMISIÓN</p>
+                        <p style="margin: 2px 0 0 0; font-weight: bold; color: #444; font-size: 14px;">${new Date().toLocaleDateString('es-CL')} ${new Date().toLocaleTimeString('es-CL')}</p>
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; margin-bottom: 30px; background: #f9f9f9; padding: 15px; border-radius: 8px;">
+                    <div>
+                        <p style="margin: 0; font-size: 11px; color: #888; text-transform: uppercase;">Período del Reporte</p>
+                        <p style="margin: 4px 0 0 0; font-weight: 600; font-size: 15px; color: #333;">${selectedMonth ? selectedMonth : 'Todos los tiempos'}</p>
+                    </div>
+                    <div style="text-align: right;">
+                        <p style="margin: 0; font-size: 11px; color: #888; text-transform: uppercase;">Total Ingresos</p>
+                        <p style="margin: 4px 0 0 0; font-weight: bold; font-size: 18px; color: #2e7d32;">${formatPrecio(totalAcumulado)}</p>
+                    </div>
+                    <div style="text-align: right;">
+                        <p style="margin: 0; font-size: 11px; color: #888; text-transform: uppercase;">Total Pedidos</p>
+                        <p style="margin: 4px 0 0 0; font-weight: bold; font-size: 18px; color: #1976d2;">${filteredOrders.length}</p>
+                    </div>
+                </div>
+
+                <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                    <thead>
+                        <tr>
+                            <th style="background-color: #fce4e4; color: #d32f2f; padding: 12px; text-align: center; border-radius: 6px 0 0 0;">#</th>
+                            <th style="background-color: #fce4e4; color: #d32f2f; padding: 12px; text-align: left;">Fecha</th>
+                            <th style="background-color: #fce4e4; color: #d32f2f; padding: 12px; text-align: left;">Cliente</th>
+                            <th style="background-color: #fce4e4; color: #d32f2f; padding: 12px; text-align: left;">Entrega</th>
+                            <th style="background-color: #fce4e4; color: #d32f2f; padding: 12px; text-align: left;">Detalle Productos</th>
+                            <th style="background-color: #fce4e4; color: #d32f2f; padding: 12px; text-align: right; border-radius: 0 6px 0 0;">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${filas}
+                    </tbody>
+                </table>
+                
+                <div style="margin-top: 40px; text-align: center; color: #aaa; font-size: 11px; padding-top: 20px; border-top: 1px solid #eee;">
+                    Documento generado automáticamente por el panel administrativo de Tu Punto Dulce.
+                </div>
+            </div>
+        `;
+
+        const element = document.createElement('div');
+        element.innerHTML = html;
+        
+        const opt = {
+            margin:       10,
+            filename:     `reporte_pedidos_${selectedMonth ? selectedMonth : 'todos'}.pdf`,
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2, useCORS: true },
+            jsPDF:        { unit: 'mm', format: 'letter', orientation: 'portrait' }
+        };
+
+        window.html2pdf().from(element).set(opt).save();
+    };
+
+    const handleDownloadPDF = () => {
+        if (!window.html2pdf) {
+            const script = document.createElement("script");
+            script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js";
+            script.onload = () => generatePDF();
+            document.body.appendChild(script);
+        } else {
+            generatePDF();
+        }
     };
 
 
@@ -739,14 +812,14 @@ const AdminDashboard = () => {
                             Imprimir Reporte
                         </button>
                         <button
-                            onClick={handleDownloadCSV}
+                            onClick={handleDownloadPDF}
                             className="btn btn-secondary btn-mobile-full export-btn"
                             style={{ 
                                 display: 'flex', gap: '8px', alignItems: 'center'
                             }}
                         >
                             <Download size={18} />
-                            Descargar Reporte (CSV)
+                            Descargar Reporte (PDF)
                         </button>
                     </div>
 
