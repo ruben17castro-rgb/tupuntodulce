@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useProducts } from '../context/ProductContextCore';
 import { useSettings } from '../context/SettingsContextCore';
-import { Plus, Edit2, Trash2, Eye, EyeOff, Lock, MessageCircle, Save, X as XIcon, LogOut, BarChart2 } from 'lucide-react';
+import { Plus, Edit2, Trash2, Eye, EyeOff, Lock, MessageCircle, Save, X as XIcon, LogOut, BarChart2, Download } from 'lucide-react';
 import ProductForm from '../components/ProductForm';
 import OrderForm from '../components/OrderForm';
 import { useAuth } from '../context/AuthContext';
@@ -247,6 +247,44 @@ const AdminDashboard = () => {
             console.error("Error al guardar pedido manual:", error);
             alert("Hubo un error al guardar el pedido.");
         }
+    };
+
+    const handleDownloadCSV = () => {
+        if (!filteredOrders || filteredOrders.length === 0) {
+            alert("No hay pedidos para descargar en este mes.");
+            return;
+        }
+
+        const headers = ["Fecha Pedido", "Cliente", "Teléfono", "Entrega Fecha", "Entrega Hora", "Detalle Productos", "Total ($)"];
+        
+        const rows = filteredOrders.map(order => {
+            const date = new Date(order.createdAt).toLocaleDateString('es-CL');
+            const prods = order.items.map(item => `${item.name} x${item.quantity}`).join(' | ');
+            const comments = order.comments ? ` (Notas: ${order.comments})` : '';
+            return [
+                date,
+                order.customerName,
+                order.customerPhone,
+                order.deliveryDate,
+                order.deliveryTime,
+                `${prods}${comments}`,
+                order.total
+            ];
+        });
+
+        const csvContent = [
+            headers.join(','),
+            ...rows.map(r => r.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+        ].join('\n');
+
+        const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `reporte_pedidos_${selectedMonth ? selectedMonth : 'todos'}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     };
 
 
@@ -699,6 +737,16 @@ const AdminDashboard = () => {
                         >
                             <BarChart2 size={18} />
                             Imprimir Reporte
+                        </button>
+                        <button
+                            onClick={handleDownloadCSV}
+                            className="btn btn-secondary btn-mobile-full export-btn"
+                            style={{ 
+                                display: 'flex', gap: '8px', alignItems: 'center'
+                            }}
+                        >
+                            <Download size={18} />
+                            Descargar Reporte (CSV)
                         </button>
                     </div>
 
