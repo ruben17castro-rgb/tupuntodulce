@@ -1037,44 +1037,66 @@ const AdminDashboard = () => {
                                             <h3 style={{ margin: 0, fontSize: '16px' }}>{productName}</h3>
                                             <span style={{ fontSize: '14px', fontWeight: 'bold' }}>{productOrders.length} {productOrders.length === 1 ? 'pedido' : 'pedidos'}</span>
                                         </div>
-                                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-                                            <thead>
-                                                <tr>
-                                                    <th style={{ padding: '10px', textAlign: 'center', borderBottom: `2px solid ${headerColor}`, color: '#555', backgroundColor: 'transparent' }}>#</th>
-                                                    <th style={{ padding: '10px', textAlign: 'left', borderBottom: `2px solid ${headerColor}`, color: '#555', backgroundColor: 'transparent' }}>Pedido</th>
-                                                    <th style={{ padding: '10px', textAlign: 'left', borderBottom: `2px solid ${headerColor}`, color: '#555', backgroundColor: 'transparent' }}>Cliente</th>
-                                                    <th style={{ padding: '10px', textAlign: 'left', borderBottom: `2px solid ${headerColor}`, color: '#555', backgroundColor: 'transparent' }}>Entrega</th>
-                                                    <th style={{ padding: '10px', textAlign: 'left', borderBottom: `2px solid ${headerColor}`, color: '#555', backgroundColor: 'transparent' }}>Detalle Productos</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {productOrders.map((order, oIdx) => (
-                                                    <tr key={order.id} style={{ backgroundColor: oIdx % 2 !== 0 ? rowColor : 'white', borderBottom: '1px solid #eee' }}>
-                                                        <td style={{ padding: '12px', textAlign: 'center', verticalAlign: 'top', border: 'none' }}>{oIdx + 1}</td>
-                                                        <td style={{ padding: '12px', verticalAlign: 'top', color: '#777', fontSize: '0.85em', border: 'none' }}>
-                                                            {new Date(order.createdAt).toLocaleDateString('es-CL')}<br/>
-                                                            {new Date(order.createdAt).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}
-                                                        </td>
-                                                        <td style={{ padding: '12px', verticalAlign: 'top', border: 'none' }}>
-                                                            <strong style={{ color: '#333' }}>{order.customerName}</strong><br/>
-                                                            <span style={{ fontSize: '0.85em', color: '#777' }}>{order.customerPhone}</span>
-                                                        </td>
-                                                        <td style={{ padding: '12px', verticalAlign: 'top', border: 'none' }}>
-                                                            {order.deliveryDate}<br/>
-                                                            <strong style={{ color: headerColor }}>{order.deliveryTime}</strong>
-                                                        </td>
-                                                        <td style={{ padding: '12px', verticalAlign: 'top', border: 'none' }}>
-                                                            <strong>{order._reportItemName} x{order._reportItemQuantity}</strong>
-                                                            {order.comments && (
-                                                                <div style={{ marginTop: '5px', fontSize: '0.85em', color: '#666', fontStyle: 'italic' }}>
-                                                                    Notas: {order.comments}
-                                                                </div>
-                                                            )}
-                                                        </td>
+                                        <div className="tabla-wrapper">
+                                            <table className="tabla-reporte" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                                                <thead>
+                                                    <tr>
+                                                        <th style={{ padding: '10px', textAlign: 'center', borderBottom: `2px solid ${headerColor}`, color: '#555', backgroundColor: 'transparent' }}>#</th>
+                                                        <th style={{ padding: '10px', textAlign: 'left', borderBottom: `2px solid ${headerColor}`, color: '#555', backgroundColor: 'transparent' }}>Pedido</th>
+                                                        <th style={{ padding: '10px', textAlign: 'left', borderBottom: `2px solid ${headerColor}`, color: '#555', backgroundColor: 'transparent' }}>Cliente</th>
+                                                        <th style={{ padding: '10px', textAlign: 'left', borderBottom: `2px solid ${headerColor}`, color: '#555', backgroundColor: 'transparent' }}>Entrega</th>
+                                                        <th style={{ padding: '10px', textAlign: 'left', borderBottom: `2px solid ${headerColor}`, color: '#555', backgroundColor: 'transparent' }}>Detalle Productos</th>
                                                     </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
+                                                </thead>
+                                                <tbody>
+                                                    {productOrders.map((order, oIdx) => (
+                                                        <tr key={order.id} style={{ backgroundColor: oIdx % 2 !== 0 ? rowColor : 'white', borderBottom: '1px solid #eee' }}>
+                                                            <td style={{ padding: '12px', textAlign: 'center', verticalAlign: 'top', border: 'none' }}>{oIdx + 1}</td>
+                                                            <td style={{ padding: '12px', verticalAlign: 'top', color: '#777', fontSize: '0.85em', border: 'none' }}>
+                                                                {new Date(order.createdAt).toLocaleDateString('es-CL')}<br/>
+                                                                {new Date(order.createdAt).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}
+                                                            </td>
+                                                            <td style={{ padding: '12px', verticalAlign: 'top', border: 'none' }}>
+                                                                <strong style={{ color: '#333' }}>{order.customerName}</strong><br/>
+                                                                <span style={{ fontSize: '0.85em', color: '#777' }}>{order.customerPhone}</span>
+                                                            </td>
+                                                            <td style={{ padding: '12px', verticalAlign: 'top', border: 'none' }}>
+                                                                {order.deliveryDate}<br/>
+                                                                <strong style={{ color: headerColor }}>{order.deliveryTime}</strong>
+                                                            </td>
+                                                            <td style={{ padding: '12px', verticalAlign: 'top', border: 'none' }}>
+                                                                <strong>{order._reportItemName} x{order._reportItemQuantity}</strong>
+                                                                {order.comments && (
+                                                                    <div style={{ marginTop: '5px', fontSize: '0.85em', color: '#666', fontStyle: 'italic' }}>
+                                                                        Notas: {order.comments}
+                                                                    </div>
+                                                                )}
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+
+                                        <div className="cards-reporte">
+                                            {productOrders.map((order, oIdx) => (
+                                                <div key={order.id} className="card-pedido">
+                                                    <div className="card-pedido-header" style={{ backgroundColor: headerColor }}>
+                                                        <span>#{oIdx + 1}</span>
+                                                        <span>📅 {new Date(order.createdAt).toLocaleDateString('es-CL')} 🕒 {new Date(order.createdAt).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}</span>
+                                                    </div>
+                                                    <div className="card-pedido-body">
+                                                        <div><span className="label">Cliente:</span> <strong>{order.customerName}</strong></div>
+                                                        <div><span className="label">Teléfono:</span> {order.customerPhone}</div>
+                                                        <div><span className="label">Entrega:</span> {order.deliveryDate} a las <strong style={{ color: headerColor }}>{order.deliveryTime}</strong></div>
+                                                        <div><span className="label">Producto:</span> <strong>{order._reportItemName} x{order._reportItemQuantity}</strong></div>
+                                                        {order.comments && (
+                                                            <div><span className="label">Notas:</span> <span style={{ fontStyle: 'italic' }}>{order.comments}</span></div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
                                     </div>
                                 );
                             })}
@@ -1425,6 +1447,50 @@ const AdminDashboard = () => {
                     }
                 }
 
+                /* ESTILOS REPORTE RESPONSIVE */
+                .tabla-wrapper {
+                    overflow-x: auto;
+                    -webkit-overflow-scrolling: touch;
+                }
+                
+                .card-pedido {
+                    border-radius: 10px;
+                    border: 1px solid #E5E7EB;
+                    overflow: hidden;
+                    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+                }
+                .card-pedido-header {
+                    padding: 8px 12px;
+                    color: white;
+                    font-weight: bold;
+                    font-size: 13px;
+                    display: flex;
+                    justify-content: space-between;
+                }
+                .card-pedido-body {
+                    padding: 10px 12px;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 4px;
+                    font-size: 13px;
+                    background-color: white;
+                    color: #1A1A2E;
+                }
+                .card-pedido-body span.label {
+                    color: #6B7280;
+                    font-size: 11px;
+                }
+
+                @media (max-width: 640px) and (orientation: portrait) {
+                    .tabla-reporte { display: none; }
+                    .cards-reporte { display: flex; flex-direction: column; gap: 12px; }
+                }
+
+                @media (min-width: 641px), (orientation: landscape) {
+                    .tabla-reporte { display: table; }
+                    .cards-reporte { display: none; }
+                }
+
                 /* MOBILE LANDSCAPE STYLES */
                 @media (max-height: 500px) and (orientation: landscape) {
                     .container { padding: 12px 16px !important; box-sizing: border-box !important; }
@@ -1453,6 +1519,10 @@ const AdminDashboard = () => {
                     
                     /* Ocultar tabla de pedidos antigua al imprimir si estuviera visible */
                     .orders-table, .orders-mobile { display: none !important; }
+
+                    /* Asegurar que las tarjetas móviles no se impriman, solo la tabla */
+                    .cards-reporte { display: none !important; }
+                    .tabla-reporte { display: table !important; }
 
                     /* Hide interactive actions during print */
                     .no-print, button { display: none !important; }
