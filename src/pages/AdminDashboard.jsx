@@ -375,14 +375,147 @@ const AdminDashboard = () => {
         }
     };
     
+    const imprimirDesdeHTML = () => {
+        const printWindow = window.open('', '_blank');
+        if (!printWindow) {
+            alert("Por favor, permite las ventanas emergentes (pop-ups) para imprimir el reporte.");
+            return;
+        }
+        
+        let htmlContent = '';
+        reportData.productsList.forEach((productName, idx) => {
+            const headerColorHex = colorsHeader[idx % colorsHeader.length];
+            const rowColorHex = colorsRow[idx % colorsRow.length];
+            const productOrders = reportData.groups[productName];
+            
+            let filas = productOrders.map((order, oIdx) => {
+                const dateObj = new Date(order.createdAt);
+                const dateOrder = `${dateObj.toLocaleDateString('es-CL')}<br>${dateObj.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}`;
+                const client = `<strong>${order.customerName}</strong><br><span style="color:#777">${order.customerPhone}</span>`;
+                const delivery = `${order.deliveryDate}<br><strong style="color:${headerColorHex}">${order.deliveryTime}</strong>`;
+                let details = `<strong>${order._reportItemName} x${order._reportItemQuantity}</strong>`;
+                if (order.comments) {
+                    details += `<div style="margin-top:5px;font-size:0.85em;color:#666;font-style:italic">Notas: ${order.comments}</div>`;
+                }
+                const rowBg = oIdx % 2 !== 0 ? rowColorHex : '#ffffff';
+                
+                return `
+                    <tr style="background-color: ${rowBg}; border-bottom: 1px solid #eee;">
+                        <td style="padding: 10px; text-align: center; vertical-align: top;">${oIdx + 1}</td>
+                        <td style="padding: 10px; vertical-align: top; color: #777; font-size: 0.85em;">${dateOrder}</td>
+                        <td style="padding: 10px; vertical-align: top;">${client}</td>
+                        <td style="padding: 10px; vertical-align: top;">${delivery}</td>
+                        <td style="padding: 10px; vertical-align: top;">${details}</td>
+                    </tr>
+                `;
+            }).join('');
+            
+            htmlContent += `
+                <div style="margin-bottom: 40px; page-break-inside: avoid;">
+                    <div style="background-color: ${headerColorHex}; color: white; padding: 12px 15px; border-radius: 6px 6px 0 0; display: flex; justify-content: space-between; align-items: center;">
+                        <h3 style="margin: 0; font-size: 16px;">${productName}</h3>
+                        <span style="font-size: 14px; font-weight: bold;">${productOrders.length} ${productOrders.length === 1 ? 'pedido' : 'pedidos'}</span>
+                    </div>
+                    <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                        <thead>
+                            <tr>
+                                <th style="padding: 10px; text-align: center; border-bottom: 2px solid ${headerColorHex}; color: #555;">#</th>
+                                <th style="padding: 10px; text-align: left; border-bottom: 2px solid ${headerColorHex}; color: #555;">Pedido</th>
+                                <th style="padding: 10px; text-align: left; border-bottom: 2px solid ${headerColorHex}; color: #555;">Cliente</th>
+                                <th style="padding: 10px; text-align: left; border-bottom: 2px solid ${headerColorHex}; color: #555;">Entrega</th>
+                                <th style="padding: 10px; text-align: left; border-bottom: 2px solid ${headerColorHex}; color: #555;">Detalle Productos</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${filas}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        });
+
+        const seccionesStr = reportData.productsList.length > 0 ? reportData.productsList.join(' · ') : 'Ninguna';
+
+        printWindow.document.write(`
+            <!DOCTYPE html>
+            <html>
+                <head>
+                    <title>Reporte Tu Punto Dulce</title>
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <style>
+                        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 13px; color: #333; margin: 40px; }
+                        @media print {
+                            body { margin: 0; padding: 20px; }
+                            .no-print { display: none; }
+                            @page { margin: 1cm; size: portrait; }
+                            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div style="border-bottom: 3px solid #3AAFA9; padding-bottom: 15px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: flex-end;">
+                        <div>
+                            <h1 style="margin: 0; font-size: 28px; color: #111; font-weight: bold;">Tu Punto Dulce</h1>
+                            <p style="margin: 5px 0 0 0; color: #666; font-size: 14px;">Reporte Oficial de Pedidos — Por Producto</p>
+                        </div>
+                        <div style="text-align: right;">
+                            <p style="margin: 0; font-size: 12px; color: #999;">FECHA DE EMISIÓN</p>
+                            <p style="margin: 2px 0 0 0; font-weight: bold; color: #666; font-size: 14px;">
+                                ${new Date().toLocaleDateString('es-CL')} ${new Date().toLocaleTimeString('es-CL')}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div style="background-color: #E8F8F7; border: 1px solid #3AAFA9; border-radius: 8px; padding: 15px; margin-bottom: 30px; display: flex; flex-wrap: wrap; gap: 20px;">
+                        <div style="flex: 1 1 120px;">
+                            <p style="margin: 0; font-size: 11px; color: #666; text-transform: uppercase;">Período</p>
+                            <p style="margin: 4px 0 0 0; font-weight: 600; font-size: 15px; color: #333;">${selectedMonth ? selectedMonth : 'Todos los tiempos'}</p>
+                        </div>
+                        <div style="flex: 1 1 120px;">
+                            <p style="margin: 0; font-size: 11px; color: #666; text-transform: uppercase;">Total de pedidos</p>
+                            <p style="margin: 4px 0 0 0; font-weight: 600; font-size: 15px; color: #333;">${filteredOrders.length}</p>
+                        </div>
+                        <div style="flex: 1 1 200px;">
+                            <p style="margin: 0; font-size: 11px; color: #666; text-transform: uppercase;">Ordenado por</p>
+                            <p style="margin: 4px 0 0 0; font-weight: 600; font-size: 15px; color: #333;">Fecha y hora de entrega</p>
+                        </div>
+                        <div style="flex: 1 1 100%;">
+                            <p style="margin: 0; font-size: 11px; color: #666; text-transform: uppercase;">Secciones</p>
+                            <p style="margin: 4px 0 0 0; font-weight: 600; font-size: 14px; color: #333;">${seccionesStr}</p>
+                        </div>
+                    </div>
+                    
+                    ${htmlContent}
+                    
+                    ${reportData.productsList.length === 0 ? '<div style="padding: 40px; text-align: center; color: #999;">No hay pedidos en este período.</div>' : ''}
+                    
+                    <script>
+                        window.onload = () => {
+                            setTimeout(() => {
+                                window.print();
+                            }, 500);
+                        }
+                    </script>
+                </body>
+            </html>
+        `);
+        printWindow.document.close();
+    };
+
     const handlePrintBrowser = () => {
-        if (!showReport) {
-            setShowReport(true);
-            setTimeout(() => {
-                window.print();
-            }, 300);
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        if (isMobile) {
+            imprimirDesdeHTML();
         } else {
-            window.print();
+            // Comportamiento de escritorio
+            if (!showReport) {
+                setShowReport(true);
+                setTimeout(() => {
+                    window.print();
+                }, 300);
+            } else {
+                window.print();
+            }
         }
     };
 
