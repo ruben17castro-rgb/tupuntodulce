@@ -23,6 +23,7 @@ const AdminDashboard = () => {
 
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isOrderFormOpen, setIsOrderFormOpen] = useState(false);
+    const [showReport, setShowReport] = useState(false);
     
     // Mes seleccionado (por defecto el actual)
     const [selectedMonth, setSelectedMonth] = useState(() => {
@@ -49,6 +50,47 @@ const AdminDashboard = () => {
         return 'de ' + name.charAt(0).toUpperCase() + name.slice(1);
     }, [selectedMonth]);
 
+    const reportData = React.useMemo(() => {
+        const groups = {};
+        const uniqueProducts = new Set();
+
+        filteredOrders.forEach(order => {
+            if (!order.items) return;
+            order.items.forEach(item => {
+                // Eliminar la cantidad al final (ej: " x2")
+                const productName = item.name.replace(/\s*[xX]\s*\d+$/, '').trim();
+                uniqueProducts.add(productName);
+                if (!groups[productName]) {
+                    groups[productName] = [];
+                }
+                groups[productName].push({
+                    ...order,
+                    _reportItemName: item.name,
+                    _reportItemQuantity: item.quantity
+                });
+            });
+        });
+
+        const sortedProducts = Array.from(uniqueProducts).sort((a, b) => a.localeCompare(b));
+
+        // Ordenar pedidos por fecha y hora de entrega dentro de cada producto
+        sortedProducts.forEach(prod => {
+            groups[prod].sort((a, b) => {
+                const dateA = new Date(`${a.deliveryDate}T${a.deliveryTime}`);
+                const dateB = new Date(`${b.deliveryDate}T${b.deliveryTime}`);
+                return dateA - dateB;
+            });
+        });
+
+        return {
+            productsList: sortedProducts,
+            groups: groups
+        };
+    }, [filteredOrders]);
+
+    const colorsHeader = ["#7C3AED", "#DB2777", "#D97706", "#0891B2", "#059669", "#DC2626"];
+    const colorsRow = ["#F5F3FF", "#FDF2F8", "#FFFBEB", "#E0F2FE", "#D1FAE5", "#FEE2E2"];
+
     // Subscribe to page views
     useEffect(() => {
         const unsubscribe = subscribeToPageViews((views) => {
@@ -65,92 +107,6 @@ const AdminDashboard = () => {
         return () => unsubscribe();
     }, []);
 
-    // Print button event listener (Problema 2 - CAUSA B) con nueva ventana
-    useEffect(() => {
-        const btnImprimir = document.querySelector('[data-action="imprimir"]');
-        if (!btnImprimir) return;
-
-        const handlePrint = function(e) {
-            e.preventDefault();
-
-            function formatPrecio(n) {
-                return '$' + Number(n).toLocaleString('es-CL');
-            }
-
-            const filas = filteredOrders.map((order, i) => {
-                const productos = order.items.map(item => {
-                    return `<b>${item.name}</b> x${item.quantity}` + (item.price ? ` — ${formatPrecio(item.price)}` : '');
-                }).join('<br><br>');
-                
-                const commentsHtml = order.comments ? `<div style="margin-top: 8px; font-style: italic; color: #555; font-size: 0.9em;">Notas: ${order.comments}</div>` : '';
-
-                return `
-                    <tr>
-                        <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: center; vertical-align: top;">${i + 1}</td>
-                        <td style="padding: 10px; border-bottom: 1px solid #ddd; vertical-align: top;">${new Date(order.createdAt).toLocaleDateString('es-CL')}</td>
-                        <td style="padding: 10px; border-bottom: 1px solid #ddd; font-weight: bold; vertical-align: top;">${order.customerName}</td>
-                        <td style="padding: 10px; border-bottom: 1px solid #ddd; color: #555; vertical-align: top;">${order.customerPhone}</td>
-                        <td style="padding: 10px; border-bottom: 1px solid #ddd; vertical-align: top;">${order.deliveryDate} ${order.deliveryTime}</td>
-                        <td style="padding: 10px; border-bottom: 1px solid #ddd; font-size: 0.9em; vertical-align: top;">${productos}${commentsHtml}</td>
-                        <td style="padding: 10px; border-bottom: 1px solid #ddd; font-weight: bold; text-align: right; vertical-align: top;">${formatPrecio(order.total)}</td>
-                    </tr>
-                `;
-            }).join('');
-
-            const html = `
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <title>Reporte de Pedidos</title>
-                <style>
-                    body { font-family: Arial, sans-serif; margin: 40px; color: #333; }
-                    table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
-                    th { background-color: #f4f4f4; padding: 12px 10px; text-align: left; border-bottom: 2px solid #ddd; font-weight: bold; }
-                    th:first-child { text-align: center; }
-                    th:last-child { text-align: right; }
-                    @page { size: letter portrait; margin: 20mm; }
-                </style>
-            </head>
-            <body>
-                <h2 style="margin: 0 0 5px 0;">Reporte de Pedidos — Tu Punto Dulce</h2>
-                <p style="margin: 0 0 20px 0; color: #666; font-size: 14px;">
-                    Generado el ${new Date().toLocaleDateString('es-CL')} a las ${new Date().toLocaleTimeString('es-CL')} · ${filteredOrders.length} pedidos
-                </p>
-                <table>
-                    <thead>
-                        <tr>
-                            <th style="width: 5%">#</th>
-                            <th style="width: 12%">Fecha pedido</th>
-                            <th style="width: 20%">Cliente</th>
-                            <th style="width: 15%">Teléfono</th>
-                            <th style="width: 15%">Entrega</th>
-                            <th style="width: 22%">Detalle Productos</th>
-                            <th style="width: 11%">Total</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${filas}
-                    </tbody>
-                </table>
-            </body>
-            </html>
-            `;
-
-            setTimeout(() => {
-                const w = window.open('', '_blank');
-                if (w) {
-                    w.document.write(html);
-                    w.document.close();
-                    setTimeout(() => { 
-                        w.print(); 
-                    }, 400);
-                }
-            }, 350);
-        };
-
-        btnImprimir.addEventListener('click', handlePrint);
-        return () => btnImprimir.removeEventListener('click', handlePrint);
-    }, [activeTab, filteredOrders, products]);
 
     // Montly Sales and Average Order stats
     const stats = React.useMemo(() => {
@@ -249,108 +205,184 @@ const AdminDashboard = () => {
         }
     };
 
-    const generatePDF = () => {
+    const generatePDFAutoTable = () => {
         if (!filteredOrders || filteredOrders.length === 0) {
             alert("No hay pedidos para descargar en este mes.");
             return;
         }
 
-        const formatPrecio = (n) => '$' + Number(n).toLocaleString('es-CL');
+        const doc = new window.jspdf.jsPDF();
+        let yPos = 20;
 
-        const filas = filteredOrders.map((order, i) => {
-            const date = new Date(order.createdAt).toLocaleDateString('es-CL');
-            const htmlProds = order.items.map(item => `<b>${item.name}</b> x${item.quantity}`).join('<br>');
-            const commentsHtml = order.comments ? `<div style="margin-top: 5px; font-style: italic; color: #666; font-size: 0.8em;">Notas: ${order.comments}</div>` : '';
-            return `
-                <tr>
-                    <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: center; vertical-align: top;">${i + 1}</td>
-                    <td style="padding: 12px; border-bottom: 1px solid #eee; vertical-align: top; color: #555;">${date}</td>
-                    <td style="padding: 12px; border-bottom: 1px solid #eee; vertical-align: top;">
-                        <strong style="color: #333;">${order.customerName}</strong><br>
-                        <span style="font-size: 0.85em; color: #777;">${order.customerPhone}</span>
-                    </td>
-                    <td style="padding: 12px; border-bottom: 1px solid #eee; vertical-align: top; color: #555;">
-                        ${order.deliveryDate}<br>
-                        <span style="font-size: 0.85em; color: #777;">${order.deliveryTime}</span>
-                    </td>
-                    <td style="padding: 12px; border-bottom: 1px solid #eee; vertical-align: top;">
-                        ${htmlProds}${commentsHtml}
-                    </td>
-                    <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: right; vertical-align: top; font-weight: bold; color: #d32f2f;">
-                        ${formatPrecio(order.total)}
-                    </td>
-                </tr>
-            `;
-        }).join('');
-
-        const html = `
-            <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #424242; padding: 40px; background: #fff; max-width: 800px; margin: auto;">
-                <div style="display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 3px solid #80cbc4; padding-bottom: 15px; margin-bottom: 30px;">
-                    <div>
-                        <h1 style="margin: 0; color: #424242; font-size: 28px; letter-spacing: -0.5px;">Tu Punto Dulce</h1>
-                        <p style="margin: 5px 0 0 0; color: #757575; font-size: 14px;">Reporte Oficial de Pedidos</p>
-                    </div>
-                    <div style="text-align: right;">
-                        <p style="margin: 0; font-size: 12px; color: #bdbdbd;">FECHA DE EMISIÓN</p>
-                        <p style="margin: 2px 0 0 0; font-weight: bold; color: #757575; font-size: 14px;">${new Date().toLocaleDateString('es-CL')} ${new Date().toLocaleTimeString('es-CL')}</p>
-                    </div>
-                </div>
-
-                <div style="display: flex; justify-content: space-between; margin-bottom: 30px; background: #f5f5f5; padding: 15px; border-radius: 8px; border-left: 4px solid #80cbc4;">
-                    <div>
-                        <p style="margin: 0; font-size: 11px; color: #9e9e9e; text-transform: uppercase;">Período del Reporte</p>
-                        <p style="margin: 4px 0 0 0; font-weight: 600; font-size: 15px; color: #424242;">${selectedMonth ? selectedMonth : 'Todos los tiempos'}</p>
-                    </div>
-                    <div style="text-align: right;">
-                        <p style="margin: 0; font-size: 11px; color: #9e9e9e; text-transform: uppercase;">Total Pedidos</p>
-                        <p style="margin: 4px 0 0 0; font-weight: bold; font-size: 18px; color: #d32f2f;">${filteredOrders.length}</p>
-                    </div>
-                </div>
-
-                <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
-                    <thead>
-                        <tr>
-                            <th style="background-color: #e0f2f1; color: #546e7a; padding: 12px; text-align: center; border-radius: 6px 0 0 0; border-bottom: 2px solid #b2dfdb;">#</th>
-                            <th style="background-color: #e0f2f1; color: #546e7a; padding: 12px; text-align: left; border-bottom: 2px solid #b2dfdb;">Fecha</th>
-                            <th style="background-color: #e0f2f1; color: #546e7a; padding: 12px; text-align: left; border-bottom: 2px solid #b2dfdb;">Cliente</th>
-                            <th style="background-color: #e0f2f1; color: #546e7a; padding: 12px; text-align: left; border-bottom: 2px solid #b2dfdb;">Entrega</th>
-                            <th style="background-color: #e0f2f1; color: #546e7a; padding: 12px; text-align: left; border-bottom: 2px solid #b2dfdb;">Detalle Productos</th>
-                            <th style="background-color: #e0f2f1; color: #546e7a; padding: 12px; text-align: right; border-radius: 0 6px 0 0; border-bottom: 2px solid #b2dfdb;">Total</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${filas}
-                    </tbody>
-                </table>
-                
-                <div style="margin-top: 40px; text-align: center; color: #bdbdbd; font-size: 11px; padding-top: 20px; border-top: 1px solid #eeeeee;">
-                    Documento generado automáticamente por el panel administrativo de Tu Punto Dulce.
-                </div>
-            </div>
-        `;
-
-        const element = document.createElement('div');
-        element.innerHTML = html;
+        // Header
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(22);
+        doc.text("Tu Punto Dulce", 14, yPos);
         
-        const opt = {
-            margin:       10,
-            filename:     `reporte_pedidos_${selectedMonth ? selectedMonth : 'todos'}.pdf`,
-            image:        { type: 'jpeg', quality: 0.98 },
-            html2canvas:  { scale: 2, useCORS: true },
-            jsPDF:        { unit: 'mm', format: 'letter', orientation: 'portrait' }
-        };
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+        doc.setTextColor(100);
+        doc.text("Reporte Oficial de Pedidos — Por Producto", 14, yPos + 6);
+        
+        const dateStr = `${new Date().toLocaleDateString('es-CL')} ${new Date().toLocaleTimeString('es-CL')}`;
+        doc.setFontSize(8);
+        doc.text("FECHA DE EMISIÓN", 196, yPos, { align: "right" });
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(10);
+        doc.text(dateStr, 196, yPos + 6, { align: "right" });
 
-        window.html2pdf().from(element).set(opt).save();
+        // Divider
+        yPos += 12;
+        doc.setDrawColor(58, 175, 169); // #3AAFA9
+        doc.setLineWidth(1);
+        doc.line(14, yPos, 196, yPos);
+        yPos += 8;
+
+        // Banner
+        doc.setFillColor(232, 248, 247); // #E8F8F7
+        doc.setDrawColor(58, 175, 169); // #3AAFA9
+        doc.setLineWidth(0.5);
+        doc.roundedRect(14, yPos, 182, 22, 2, 2, "FD");
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8);
+        doc.setTextColor(100);
+        doc.text("PERÍODO", 20, yPos + 8);
+        doc.text("TOTAL DE PEDIDOS", 60, yPos + 8);
+        doc.text("ORDENADO POR", 100, yPos + 8);
+        doc.text("SECCIONES", 150, yPos + 8);
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(10);
+        doc.setTextColor(51); // #333
+        doc.text(selectedMonth ? selectedMonth : 'Todos', 20, yPos + 14);
+        doc.text(filteredOrders.length.toString(), 60, yPos + 14);
+        doc.text("Fecha de entrega", 100, yPos + 14);
+        
+        const sectionsStr = reportData.productsList.length > 0 ? reportData.productsList.join(' · ') : 'Ninguna';
+        const truncatedSections = doc.splitTextToSize(sectionsStr, 40);
+        doc.text(truncatedSections[0] + (truncatedSections.length > 1 ? '...' : ''), 150, yPos + 14);
+
+        yPos += 30;
+
+        // Iterar sobre secciones de producto
+        reportData.productsList.forEach((productName, idx) => {
+            const productOrders = reportData.groups[productName];
+            if (!productOrders || productOrders.length === 0) return;
+
+            const headerColorHex = colorsHeader[idx % colorsHeader.length];
+            const rowColorHex = colorsRow[idx % colorsRow.length];
+            
+            // Helper to parse hex to rgb
+            const hexToRgb = (hex) => {
+                const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+                return result ? [parseInt(result[1], 16), parseInt(result[2], 16), parseInt(result[3], 16)] : [0,0,0];
+            };
+
+            const rgbHeader = hexToRgb(headerColorHex);
+            const rgbRow = hexToRgb(rowColorHex);
+
+            // Título de la sección
+            doc.setFillColor(rgbHeader[0], rgbHeader[1], rgbHeader[2]);
+            doc.rect(14, yPos, 182, 10, "F");
+            
+            doc.setTextColor(255, 255, 255);
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(12);
+            doc.text(productName, 18, yPos + 7);
+            
+            doc.setFontSize(10);
+            const qtyText = `${productOrders.length} ${productOrders.length === 1 ? 'pedido' : 'pedidos'}`;
+            doc.text(qtyText, 192, yPos + 7, { align: "right" });
+
+            yPos += 10;
+
+            const tableData = productOrders.map((order, oIdx) => {
+                const dateObj = new Date(order.createdAt);
+                const dateOrder = `${dateObj.toLocaleDateString('es-CL')} ${dateObj.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}`;
+                const client = `${order.customerName}\n${order.customerPhone}`;
+                const delivery = `${order.deliveryDate}\n${order.deliveryTime}`;
+                let details = `${order._reportItemName} x${order._reportItemQuantity}`;
+                if (order.comments) {
+                    details += `\nNotas: ${order.comments}`;
+                }
+                return [
+                    oIdx + 1,
+                    dateOrder,
+                    client,
+                    delivery,
+                    details
+                ];
+            });
+
+            doc.autoTable({
+                startY: yPos,
+                head: [['#', 'Pedido', 'Cliente', 'Entrega', 'Detalle Productos']],
+                body: tableData,
+                theme: 'plain',
+                headStyles: {
+                    fillColor: [255, 255, 255],
+                    textColor: [85, 85, 85],
+                    fontStyle: 'bold',
+                    lineWidth: { bottom: 0.5 },
+                    lineColor: rgbHeader
+                },
+                bodyStyles: {
+                    textColor: [51, 51, 51],
+                },
+                alternateRowStyles: {
+                    fillColor: rgbRow
+                },
+                margin: { left: 14, right: 14 },
+                styles: {
+                    fontSize: 9,
+                    cellPadding: 4,
+                },
+                columnStyles: {
+                    0: { cellWidth: 10, halign: 'center' },
+                    1: { cellWidth: 25 },
+                    2: { cellWidth: 40 },
+                    3: { cellWidth: 30, fontStyle: 'bold', textColor: rgbHeader },
+                    4: { cellWidth: 'auto', fontStyle: 'bold' }
+                }
+            });
+
+            yPos = doc.lastAutoTable.finalY + 15;
+            
+            // Check if we need a page break
+            if (yPos > 270 && idx < reportData.productsList.length - 1) {
+                doc.addPage();
+                yPos = 20;
+            }
+        });
+
+        doc.save(`reporte_pedidos_por_producto_${selectedMonth ? selectedMonth : 'todos'}.pdf`);
     };
 
-    const handleDownloadPDF = () => {
-        if (!window.html2pdf) {
-            const script = document.createElement("script");
-            script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js";
-            script.onload = () => generatePDF();
-            document.body.appendChild(script);
+    const loadScriptsAndGeneratePDF = () => {
+        if (!window.jspdf) {
+            const script1 = document.createElement("script");
+            script1.src = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
+            script1.onload = () => {
+                const script2 = document.createElement("script");
+                script2.src = "https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js";
+                script2.onload = () => generatePDFAutoTable();
+                document.body.appendChild(script2);
+            };
+            document.body.appendChild(script1);
         } else {
-            generatePDF();
+            generatePDFAutoTable();
+        }
+    };
+    
+    const handlePrintBrowser = () => {
+        if (!showReport) {
+            setShowReport(true);
+            setTimeout(() => {
+                window.print();
+            }, 300);
+        } else {
+            window.print();
         }
     };
 
@@ -796,97 +828,198 @@ const AdminDashboard = () => {
                             Ingresar Pedido Manual
                         </button>
                         <button
-                            data-action="imprimir"
-                            className="btn btn-secondary btn-mobile-full print-btn btn-imprimir-fix"
+                            onClick={() => setShowReport(!showReport)}
+                            className="btn btn-secondary btn-mobile-full"
+                            style={{ display: 'flex', gap: '8px', alignItems: 'center' }}
+                        >
+                            {showReport ? <EyeOff size={18} /> : <Eye size={18} />}
+                            {showReport ? 'Ocultar Reporte' : 'Ver Reporte'}
+                        </button>
+                        <button
+                            onClick={handlePrintBrowser}
+                            className="btn btn-secondary btn-mobile-full print-btn"
                             style={{ 
                                 display: 'flex', gap: '8px', alignItems: 'center'
                             }}
                         >
                             <BarChart2 size={18} />
-                            Imprimir Reporte
+                            Imprimir
                         </button>
                         <button
-                            onClick={handleDownloadPDF}
+                            onClick={loadScriptsAndGeneratePDF}
                             className="btn btn-secondary btn-mobile-full export-btn"
                             style={{ 
                                 display: 'flex', gap: '8px', alignItems: 'center'
                             }}
                         >
                             <Download size={18} />
-                            Descargar Reporte (PDF)
+                            Descargar PDF
                         </button>
                     </div>
 
-                    <div className="print-only" style={{ display: 'none', padding: '20px', textAlign: 'center', borderBottom: '2px solid #333', marginBottom: '20px' }}>
-                        <h1 style={{ margin: '0 0 10px 0' }}>Resumen de Pedidos - Tu Punto Dulce</h1>
-                        <p style={{ margin: 0 }}>Generado el {new Date().toLocaleDateString('es-CL')} a las {new Date().toLocaleTimeString('es-CL')}</p>
-                    </div>
+                    {showReport ? (
+                        <div className="report-area" style={{ padding: '40px', backgroundColor: 'white' }}>
+                            <div style={{ borderBottom: '3px solid #3AAFA9', paddingBottom: '15px', marginBottom: '30px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                                <div>
+                                    <h1 style={{ margin: 0, fontSize: '28px', color: '#111', fontWeight: 'bold' }}>Tu Punto Dulce</h1>
+                                    <p style={{ margin: '5px 0 0 0', color: '#666', fontSize: '14px' }}>Reporte Oficial de Pedidos — Por Producto</p>
+                                </div>
+                                <div style={{ textAlign: 'right' }}>
+                                    <p style={{ margin: 0, fontSize: '12px', color: '#999' }}>FECHA DE EMISIÓN</p>
+                                    <p style={{ margin: '2px 0 0 0', fontWeight: 'bold', color: '#666', fontSize: '14px' }}>
+                                        {new Date().toLocaleDateString('es-CL')} {new Date().toLocaleTimeString('es-CL')}
+                                    </p>
+                                </div>
+                            </div>
 
-                    <table className="orders-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
-                        <thead style={{ backgroundColor: '#f9f9f9', borderBottom: '1px solid #eee' }}>
-                            <tr>
-                                <th style={{ padding: '15px', textAlign: 'left' }}>Fecha</th>
-                                <th style={{ padding: '15px', textAlign: 'left' }}>Cliente</th>
-                                <th style={{ padding: '15px', textAlign: 'left' }}>Entrega</th>
-                                <th style={{ padding: '15px', textAlign: 'left' }}>Detalle Productos</th>
-                                <th style={{ padding: '15px', textAlign: 'right' }}>Total</th>
-                                <th className="no-print" style={{ padding: '15px', textAlign: 'right' }}>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {filteredOrders.map(order => (
-                                <tr key={order.id} style={{ borderBottom: '1px solid #eee' }}>
-                                    <td style={{ padding: '15px', verticalAlign: 'top', fontSize: '0.9rem' }}>
-                                        {new Date(order.createdAt).toLocaleDateString('es-CL')}
-                                    </td>
-                                    <td style={{ padding: '15px', verticalAlign: 'top' }}>
-                                        <div style={{ fontWeight: '600' }}>{order.customerName}</div>
-                                        <div style={{ fontSize: '0.85rem', color: '#666' }}>{order.customerPhone}</div>
-                                    </td>
-                                    <td style={{ padding: '15px', verticalAlign: 'top' }}>
-                                        <div>{order.deliveryDate}</div>
-                                        <div style={{ fontSize: '0.85rem', color: '#666' }}>{order.deliveryTime}</div>
-                                    </td>
-                                    <td style={{ padding: '15px', verticalAlign: 'top' }}>
-                                        <ul style={{ margin: 0, paddingLeft: '15px', fontSize: '0.85rem' }}>
-                                            {order.items.map((item, idx) => (
-                                                <li key={idx}>
-                                                    {item.name} x{item.quantity}
-                                                </li>
-                                            ))}
-                                        </ul>
-                                        {order.comments && (
-                                            <div style={{ marginTop: '5px', fontSize: '0.8rem', color: '#666', fontStyle: 'italic' }}>
-                                                "{order.comments}"
-                                            </div>
-                                        )}
-                                    </td>
-                                    <td style={{ padding: '15px', textAlign: 'right', fontWeight: 'bold' }}>
-                                        ${order.total.toLocaleString('es-CL')}
-                                    </td>
-                                    <td className="no-print" style={{ padding: '15px', textAlign: 'right' }}>
-                                        <button
-                                            onClick={() => {
-                                                if (window.confirm('¿Estás seguro de eliminar este pedido del historial?')) {
-                                                    deleteOrderFirebase(order.id);
-                                                }
-                                            }}
-                                            style={{ background: 'none', color: '#ff6b6b' }}
-                                            title="Eliminar de historial"
-                                        >
-                                            <Trash2 size={18} />
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                            <div style={{ backgroundColor: '#E8F8F7', border: '1px solid #3AAFA9', borderRadius: '8px', padding: '15px', marginBottom: '30px', display: 'flex', flexWrap: 'wrap', gap: '20px' }}>
+                                <div style={{ flex: '1 1 120px' }}>
+                                    <p style={{ margin: 0, fontSize: '11px', color: '#666', textTransform: 'uppercase' }}>Período</p>
+                                    <p style={{ margin: '4px 0 0 0', fontWeight: '600', fontSize: '15px', color: '#333' }}>{selectedMonth ? selectedMonth : 'Todos los tiempos'}</p>
+                                </div>
+                                <div style={{ flex: '1 1 120px' }}>
+                                    <p style={{ margin: 0, fontSize: '11px', color: '#666', textTransform: 'uppercase' }}>Total de pedidos</p>
+                                    <p style={{ margin: '4px 0 0 0', fontWeight: '600', fontSize: '15px', color: '#333' }}>{filteredOrders.length}</p>
+                                </div>
+                                <div style={{ flex: '1 1 200px' }}>
+                                    <p style={{ margin: 0, fontSize: '11px', color: '#666', textTransform: 'uppercase' }}>Ordenado por</p>
+                                    <p style={{ margin: '4px 0 0 0', fontWeight: '600', fontSize: '15px', color: '#333' }}>Fecha y hora de entrega</p>
+                                </div>
+                                <div style={{ flex: '1 1 100%' }}>
+                                    <p style={{ margin: 0, fontSize: '11px', color: '#666', textTransform: 'uppercase' }}>Secciones</p>
+                                    <p style={{ margin: '4px 0 0 0', fontWeight: '600', fontSize: '14px', color: '#333' }}>
+                                        {reportData.productsList.length > 0 ? reportData.productsList.join(' · ') : 'Ninguna'}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {reportData.productsList.map((productName, idx) => {
+                                const headerColor = colorsHeader[idx % colorsHeader.length];
+                                const rowColor = colorsRow[idx % colorsRow.length];
+                                const productOrders = reportData.groups[productName];
+
+                                return (
+                                    <div key={productName} style={{ marginBottom: '40px', pageBreakInside: 'avoid' }}>
+                                        <div style={{ backgroundColor: headerColor, color: 'white', padding: '12px 15px', borderRadius: '6px 6px 0 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <h3 style={{ margin: 0, fontSize: '16px' }}>{productName}</h3>
+                                            <span style={{ fontSize: '14px', fontWeight: 'bold' }}>{productOrders.length} {productOrders.length === 1 ? 'pedido' : 'pedidos'}</span>
+                                        </div>
+                                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                                            <thead>
+                                                <tr>
+                                                    <th style={{ padding: '10px', textAlign: 'center', borderBottom: `2px solid ${headerColor}`, color: '#555', backgroundColor: 'transparent' }}>#</th>
+                                                    <th style={{ padding: '10px', textAlign: 'left', borderBottom: `2px solid ${headerColor}`, color: '#555', backgroundColor: 'transparent' }}>Pedido</th>
+                                                    <th style={{ padding: '10px', textAlign: 'left', borderBottom: `2px solid ${headerColor}`, color: '#555', backgroundColor: 'transparent' }}>Cliente</th>
+                                                    <th style={{ padding: '10px', textAlign: 'left', borderBottom: `2px solid ${headerColor}`, color: '#555', backgroundColor: 'transparent' }}>Entrega</th>
+                                                    <th style={{ padding: '10px', textAlign: 'left', borderBottom: `2px solid ${headerColor}`, color: '#555', backgroundColor: 'transparent' }}>Detalle Productos</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {productOrders.map((order, oIdx) => (
+                                                    <tr key={order.id} style={{ backgroundColor: oIdx % 2 !== 0 ? rowColor : 'white', borderBottom: '1px solid #eee' }}>
+                                                        <td style={{ padding: '12px', textAlign: 'center', verticalAlign: 'top', border: 'none' }}>{oIdx + 1}</td>
+                                                        <td style={{ padding: '12px', verticalAlign: 'top', color: '#777', fontSize: '0.85em', border: 'none' }}>
+                                                            {new Date(order.createdAt).toLocaleDateString('es-CL')}<br/>
+                                                            {new Date(order.createdAt).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}
+                                                        </td>
+                                                        <td style={{ padding: '12px', verticalAlign: 'top', border: 'none' }}>
+                                                            <strong style={{ color: '#333' }}>{order.customerName}</strong><br/>
+                                                            <span style={{ fontSize: '0.85em', color: '#777' }}>{order.customerPhone}</span>
+                                                        </td>
+                                                        <td style={{ padding: '12px', verticalAlign: 'top', border: 'none' }}>
+                                                            {order.deliveryDate}<br/>
+                                                            <strong style={{ color: headerColor }}>{order.deliveryTime}</strong>
+                                                        </td>
+                                                        <td style={{ padding: '12px', verticalAlign: 'top', border: 'none' }}>
+                                                            <strong>{order._reportItemName} x{order._reportItemQuantity}</strong>
+                                                            {order.comments && (
+                                                                <div style={{ marginTop: '5px', fontSize: '0.85em', color: '#666', fontStyle: 'italic' }}>
+                                                                    Notas: {order.comments}
+                                                                </div>
+                                                            )}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                );
+                            })}
+                            
+                            {reportData.productsList.length === 0 && (
+                                <div style={{ padding: '40px', textAlign: 'center', color: '#999' }}>
+                                    No hay pedidos en este período.
+                                </div>
+                            )}
+                        </div>
+                    ) : (
+                        <>
+                            <table className="orders-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                <thead style={{ backgroundColor: '#f9f9f9', borderBottom: '1px solid #eee' }}>
+                                    <tr>
+                                        <th style={{ padding: '15px', textAlign: 'left' }}>Fecha</th>
+                                        <th style={{ padding: '15px', textAlign: 'left' }}>Cliente</th>
+                                        <th style={{ padding: '15px', textAlign: 'left' }}>Entrega</th>
+                                        <th style={{ padding: '15px', textAlign: 'left' }}>Detalle Productos</th>
+                                        <th style={{ padding: '15px', textAlign: 'right' }}>Total</th>
+                                        <th className="no-print" style={{ padding: '15px', textAlign: 'right' }}>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {filteredOrders.map(order => (
+                                        <tr key={order.id} style={{ borderBottom: '1px solid #eee' }}>
+                                            <td style={{ padding: '15px', verticalAlign: 'top', fontSize: '0.9rem' }}>
+                                                {new Date(order.createdAt).toLocaleDateString('es-CL')}<br/>
+                                                <span style={{ fontSize: '0.85em', color: '#666' }}>{new Date(order.createdAt).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}</span>
+                                            </td>
+                                            <td style={{ padding: '15px', verticalAlign: 'top' }}>
+                                                <div style={{ fontWeight: '600' }}>{order.customerName}</div>
+                                                <div style={{ fontSize: '0.85rem', color: '#666' }}>{order.customerPhone}</div>
+                                            </td>
+                                            <td style={{ padding: '15px', verticalAlign: 'top' }}>
+                                                <div>{order.deliveryDate}</div>
+                                                <div style={{ fontSize: '0.85rem', color: '#666' }}>{order.deliveryTime}</div>
+                                            </td>
+                                            <td style={{ padding: '15px', verticalAlign: 'top' }}>
+                                                <ul style={{ margin: 0, paddingLeft: '15px', fontSize: '0.85rem' }}>
+                                                    {order.items.map((item, idx) => (
+                                                        <li key={idx}>
+                                                            {item.name} x{item.quantity}
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                                {order.comments && (
+                                                    <div style={{ marginTop: '5px', fontSize: '0.8rem', color: '#666', fontStyle: 'italic' }}>
+                                                        "{order.comments}"
+                                                    </div>
+                                                )}
+                                            </td>
+                                            <td style={{ padding: '15px', textAlign: 'right', fontWeight: 'bold' }}>
+                                                ${order.total.toLocaleString('es-CL')}
+                                            </td>
+                                            <td className="no-print" style={{ padding: '15px', textAlign: 'right' }}>
+                                                <button
+                                                    onClick={() => {
+                                                        if (window.confirm('¿Estás seguro de eliminar este pedido del historial?')) {
+                                                            deleteOrderFirebase(order.id);
+                                                        }
+                                                    }}
+                                                    style={{ background: 'none', color: '#ff6b6b' }}
+                                                    title="Eliminar de historial"
+                                                >
+                                                    <Trash2 size={18} />
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
 
                     <div className="orders-mobile print-only-hide">
                         {filteredOrders.map(order => (
                             <div key={order.id} className="mobile-order-card">
                                 <div className="moc-header">
-                                    <span className="moc-date">{new Date(order.createdAt).toLocaleDateString('es-CL')}</span>
+                                    <span className="moc-date">{new Date(order.createdAt).toLocaleDateString('es-CL')} {new Date(order.createdAt).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}</span>
                                     <button
                                         onClick={() => {
                                             if (window.confirm('¿Estás seguro de eliminar este pedido del historial?')) {
@@ -925,8 +1058,10 @@ const AdminDashboard = () => {
                             </div>
                         ))}
                     </div>
+                    </>
+                    )}
 
-                    {filteredOrders.length === 0 && (
+                    {filteredOrders.length === 0 && !showReport && (
                         <div style={{ padding: '40px', textAlign: 'center', color: '#999' }}>
                             No hay pedidos registrados en {formattedMonth.replace('de ', '')}.
                         </div>
@@ -1176,36 +1311,15 @@ const AdminDashboard = () => {
                     .print-only { display: block !important; }
                     .container { padding: 0 !important; width: 100% !important; max-width: none !important; margin: 0 !important; box-shadow: none !important; }
                     
-                    table { 
-                        width: 100% !important; 
-                        border-collapse: collapse !important; 
-                        border: 1px solid #000 !important; 
-                        font-size: 8pt !important; 
-                        table-layout: fixed !important; /* Forces fixed layout to avoid overflow */
-                    }
-                    th { 
-                        background-color: #f2f2f2 !important; 
-                        border: 1px solid #000 !important; 
-                        padding: 8px 4px !important; 
-                        color: black !important;
-                        font-weight: bold !important;
-                        text-align: left !important;
-                    }
-                    td { 
-                        border: 1px solid #000 !important; 
-                        padding: 8px 4px !important; 
-                        word-break: break-word !important;
-                        vertical-align: top !important;
-                        color: black !important;
-                    }
-                    h1, p { color: black !important; margin: 5px 0 !important; }
+                    /* Si estamos mostrando el reporte por producto, respetamos sus colores */
+                    .report-area h1, .report-area p, .report-area strong { color: inherit !important; }
+                    .report-area table { border: none !important; width: 100% !important; border-collapse: collapse !important; font-size: 10pt !important; }
+                    .report-area th, .report-area td { border: none !important; color: inherit !important; padding: 6px !important; text-align: left !important; }
+                    .report-area td { border-bottom: 1px solid #eee !important; }
+                    .report-area tr { page-break-inside: avoid !important; }
                     
-                    /* Specific column widths for better fit on small sheets */
-                    th:nth-child(1), td:nth-child(1) { width: 15%; } /* Fecha */
-                    th:nth-child(2), td:nth-child(2) { width: 20%; } /* Cliente */
-                    th:nth-child(3), td:nth-child(3) { width: 15%; } /* Entrega */
-                    th:nth-child(4), td:nth-child(4) { width: 35%; } /* Detalle */
-                    th:nth-child(5), td:nth-child(5) { width: 15%; } /* Total */
+                    /* Ocultar tabla de pedidos antigua al imprimir si estuviera visible */
+                    .orders-table, .orders-mobile { display: none !important; }
 
                     /* Hide interactive actions during print */
                     .no-print, button { display: none !important; }
