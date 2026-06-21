@@ -12,6 +12,8 @@ const ProductForm = ({ product, onSave, onCancel }) => {
         active: true
     });
 
+    const [uploading, setUploading] = useState(false);
+
     useEffect(() => {
         if (product) {
             // eslint-disable-next-line
@@ -31,19 +33,21 @@ const ProductForm = ({ product, onSave, onCancel }) => {
         const file = e.target.files[0];
         if (file) {
             try {
-                // Resize to max 1200px and compress (quality 0.8)
+                setUploading(true);
+                // Redimensiona a máx 1200px y comprime (calidad 0.8) -> base64
                 const optimizedImage = await optimizeImage(file, 1200, 0.8);
                 setFormData(prev => ({ ...prev, image: optimizedImage }));
             } catch (error) {
                 console.error("Error optimizing image:", error);
                 alert("Error al procesar la imagen.");
+            } finally {
+                setUploading(false);
             }
         }
     };
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        console.log("Submitting form data:", formData);
         try {
             onSave({
                 ...formData,
@@ -174,14 +178,17 @@ const ProductForm = ({ product, onSave, onCancel }) => {
                             cursor: 'pointer',
                             transition: 'border-color 0.2s',
                             backgroundColor: '#fafafa'
-                        }} onClick={() => document.getElementById('fileInput').click()}>
+                        }} onClick={() => !uploading && document.getElementById('fileInput').click()}>
                             <Upload size={24} color="#999" style={{ marginBottom: '5px' }} />
-                            <p style={{ color: '#666', fontSize: '0.9rem' }}>Click para subir imagen</p>
+                            <p style={{ color: '#666', fontSize: '0.9rem' }}>
+                                {uploading ? 'Procesando imagen...' : 'Click para subir imagen'}
+                            </p>
                             <input
                                 id="fileInput"
                                 type="file"
                                 accept="image/*"
                                 onChange={handleImageUpload}
+                                disabled={uploading}
                                 style={{ display: 'none' }}
                             />
                         </div>
@@ -213,9 +220,9 @@ const ProductForm = ({ product, onSave, onCancel }) => {
                         <button type="button" onClick={onCancel} className="btn btn-secondary">
                             Cancelar
                         </button>
-                        <button type="submit" className="btn btn-primary" style={{ display: 'flex', gap: '5px' }}>
+                        <button type="submit" className="btn btn-primary" disabled={uploading} style={{ display: 'flex', gap: '5px', opacity: uploading ? 0.6 : 1, cursor: uploading ? 'not-allowed' : 'pointer' }}>
                             <Save size={18} />
-                            Guardar
+                            {uploading ? 'Procesando...' : 'Guardar'}
                         </button>
                     </div>
                 </form>

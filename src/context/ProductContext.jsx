@@ -69,20 +69,17 @@ export const ProductProvider = ({ children }) => {
 
     const discountStock = useCallback(async (cartItems) => {
         try {
-            const itemsToUpdate = cartItems.map(item => {
-                const product = products.find(p => p.id === item.id);
-                const currentStock = Number(product?.stock) || 0;
-                return {
-                    id: item.id,
-                    newStock: Math.max(0, currentStock - (Number(item.quantity) || 0))
-                };
-            });
+            // Descuento atómico: pasamos la cantidad y Firestore aplica increment(-qty)
+            const itemsToUpdate = cartItems.map(item => ({
+                id: item.id,
+                quantity: Number(item.quantity) || 0
+            }));
             await discountStockFirebase(itemsToUpdate);
         } catch (err) {
             console.error("Error discounting stock:", err);
             throw err;
         }
-    }, [products]);
+    }, []);
 
     const contextValue = useMemo(() => ({
         products,

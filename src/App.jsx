@@ -86,6 +86,16 @@ function App() {
                           </ProtectedRoute>
                         }
                       />
+                      <Route
+                        path="*"
+                        element={
+                          <div style={{ padding: '80px 20px', textAlign: 'center', fontFamily: 'var(--font-body)' }}>
+                            <h2 style={{ fontSize: '2rem', marginBottom: '10px' }}>Página no encontrada 🍰</h2>
+                            <p style={{ color: '#666', marginBottom: '24px' }}>La página que buscas no existe o fue movida.</p>
+                            <a href="/" className="btn btn-primary" style={{ textDecoration: 'none' }}>Volver al inicio</a>
+                          </div>
+                        }
+                      />
                     </Routes>
                   </main>
 

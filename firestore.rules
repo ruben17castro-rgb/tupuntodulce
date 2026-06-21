@@ -1,0 +1,42 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Productos: lectura pública. Crear/eliminar solo admin autenticado.
+    // El público (checkout) solo puede ACTUALIZAR el campo 'stock' y nunca subirlo.
+    match /productos/{id} {
+      allow read: if true;
+      allow create, delete: if request.auth != null;
+      allow update: if request.auth != null
+        || (
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stock'])
+          && request.resource.data.stock is int
+          && request.resource.data.stock >= 0
+          && request.resource.data.stock <= resource.data.stock
+        );
+    }
+
+    // Configuración global (WhatsApp, datos bancarios): lectura pública, escritura solo admin.
+    match /config/{doc} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // Pedidos: el cliente puede crear. Leer/editar/eliminar solo admin.
+    match /pedidos/{id} {
+      allow create: if true;
+      allow read, update, delete: if request.auth != null;
+    }
+
+    // Contador de visitas: lectura/escritura pública (solo incrementos).
+    match /stats/{doc} {
+      allow read, write: if true;
+    }
+
+    // Todo lo demás queda bloqueado por defecto.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

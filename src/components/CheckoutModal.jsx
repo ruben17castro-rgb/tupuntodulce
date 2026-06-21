@@ -227,12 +227,11 @@ const CheckoutModal = () => {
                         <div>
                             <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500', fontSize: '0.9rem', color: 'var(--color-secondary)' }}>Hora Estimada *</label>
                             <input
-                                type="text"
+                                type="time"
                                 name="time"
                                 required
                                 value={formData.time}
                                 onChange={handleChange}
-                                placeholder="Ej: 13:00"
                                 style={{ width: '100%', height: '42px', padding: '0 10px', boxSizing: 'border-box', margin: 0 }}
                             />
                         </div>

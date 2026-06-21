@@ -62,16 +62,19 @@ export const subscribeToProducts = (callback) => {
 };
 
 /**
- * Actualiza el stock de varios productos (Checkout)
+ * Descuenta el stock de varios productos de forma atómica (Checkout).
+ * Usa increment(-cantidad) para evitar condiciones de carrera (sobreventa)
+ * entre pedidos simultáneos.
  */
 export const discountStockFirebase = async (items) => {
     try {
-        for (const item of items) {
+        await Promise.all(items.map((item) => {
             const productRef = doc(db, PRODUCTS_COLLECTION, item.id);
-            await updateDoc(productRef, {
-                stock: Math.max(0, Number(item.newStock))
+            const qty = Math.max(0, Number(item.quantity) || 0);
+            return updateDoc(productRef, {
+                stock: increment(-qty)
             });
-        }
+        }));
     } catch (error) {
         console.error("Error updating stock in Firebase:", error);
         throw error;
