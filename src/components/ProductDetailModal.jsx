@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { X, Plus, Minus, ShoppingCart } from 'lucide-react';
+import { X, Plus, Minus, ShoppingCart, Check } from 'lucide-react';
 import { useCart } from '../context/CartContextCore';
 
 const ProductDetailModal = ({ product, onClose }) => {
     const { addToCart } = useCart();
-    const [isUnitMode, setIsUnitMode] = useState(Boolean(product?.allowUnitSale));
+
+    const hasPacks = Boolean(product?.hasPacks) && Array.isArray(product?.packs) && product.packs.length > 0;
+    const [selectedPack, setSelectedPack] = useState(() => (hasPacks ? product.packs[0] : null));
     const [quantity, setQuantity] = useState(1);
 
     if (!product) return null;
@@ -20,18 +22,17 @@ const ProductDetailModal = ({ product, onClose }) => {
     const stock = product.stock !== undefined ? Number(product.stock) : 0;
     const isOutOfStock = stock <= 0;
 
-    const unitPrice = product.unitPrice !== undefined && product.unitPrice !== null ? Number(product.unitPrice) : Number(product.price);
-    const unitName = product.unitName || 'unidad';
+    // Precio unitario por pack o precio estándar
+    const currentPricePerUnit = hasPacks && selectedPack
+        ? Number(selectedPack.price) || 0
+        : Number(product.price) || 0;
 
-    const currentPricePerItem = isUnitMode ? unitPrice : Number(product.price);
-    const totalPriceCalculated = currentPricePerItem * quantity;
+    const totalPriceCalculated = currentPricePerUnit * quantity;
 
     const handleAddToCart = () => {
-        if (isUnitMode) {
+        if (hasPacks && selectedPack) {
             addToCart(product, quantity, {
-                isUnitSale: true,
-                unitName: unitName,
-                unitPrice: unitPrice
+                selectedPack: selectedPack
             });
         } else {
             addToCart(product, quantity);
@@ -158,16 +159,18 @@ const ProductDetailModal = ({ product, onClose }) => {
                             {product.name}
                         </h2>
 
+                        {/* Display Actual Price (Updates when selecting pack) */}
                         <div style={{
-                            fontSize: '1.5rem',
+                            fontSize: '1.75rem',
                             fontWeight: 'bold',
                             color: 'var(--color-primary)',
-                            marginBottom: 'var(--spacing-xs)'
+                            marginBottom: 'var(--spacing-xs)',
+                            transition: 'color 0.2s ease'
                         }}>
-                            {formatPrice(product.price)}
-                            {product.allowUnitSale && (
+                            {formatPrice(currentPricePerUnit)}
+                            {hasPacks && selectedPack && (
                                 <span style={{ fontSize: '0.9rem', color: '#64748b', fontWeight: '500', marginLeft: '10px' }}>
-                                    ({formatPrice(unitPrice)} c/{unitName})
+                                    ({selectedPack.name})
                                 </span>
                             )}
                         </div>
@@ -201,8 +204,8 @@ const ProductDetailModal = ({ product, onClose }) => {
                             {product.description}
                         </div>
 
-                        {/* Selección Venta por Unidades vs Paquete */}
-                        {product.allowUnitSale && (
+                        {/* Selector de Packs / Formatos */}
+                        {hasPacks && (
                             <div style={{
                                 backgroundColor: '#f8fafc',
                                 border: '1px solid #e2e8f0',
@@ -210,44 +213,48 @@ const ProductDetailModal = ({ product, onClose }) => {
                                 padding: '12px',
                                 marginBottom: '15px'
                             }}>
-                                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', color: '#475569', marginBottom: '8px' }}>
-                                    Formato de Compra:
+                                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', color: '#475569', marginBottom: '10px' }}>
+                                    Selecciona el Pack / Formato:
                                 </label>
-                                <div style={{ display: 'flex', gap: '10px' }}>
-                                    <button
-                                        type="button"
-                                        onClick={() => setIsUnitMode(true)}
-                                        style={{
-                                            flex: 1,
-                                            padding: '8px 12px',
-                                            borderRadius: 'var(--radius-sm)',
-                                            border: isUnitMode ? '2px solid var(--color-primary)' : '1px solid #cbd5e1',
-                                            backgroundColor: isUnitMode ? '#f0f9f9' : 'white',
-                                            color: isUnitMode ? 'var(--color-primary)' : '#64748b',
-                                            fontWeight: isUnitMode ? 'bold' : 'normal',
-                                            cursor: 'pointer',
-                                            fontSize: '0.85rem'
-                                        }}
-                                    >
-                                        Por {unitName}s ({formatPrice(unitPrice)} c/u)
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => setIsUnitMode(false)}
-                                        style={{
-                                            flex: 1,
-                                            padding: '8px 12px',
-                                            borderRadius: 'var(--radius-sm)',
-                                            border: !isUnitMode ? '2px solid var(--color-primary)' : '1px solid #cbd5e1',
-                                            backgroundColor: !isUnitMode ? '#f0f9f9' : 'white',
-                                            color: !isUnitMode ? 'var(--color-primary)' : '#64748b',
-                                            fontWeight: !isUnitMode ? 'bold' : 'normal',
-                                            cursor: 'pointer',
-                                            fontSize: '0.85rem'
-                                        }}
-                                    >
-                                        Paquete Completo ({formatPrice(product.price)})
-                                    </button>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                    {product.packs.map((packOption) => {
+                                        const isSelected = selectedPack?.id === packOption.id;
+                                        return (
+                                            <button
+                                                key={packOption.id}
+                                                type="button"
+                                                onClick={() => setSelectedPack(packOption)}
+                                                style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'space-between',
+                                                    padding: '10px 14px',
+                                                    borderRadius: 'var(--radius-sm)',
+                                                    border: isSelected ? '2px solid var(--color-primary)' : '1px solid #cbd5e1',
+                                                    backgroundColor: isSelected ? '#f0f9f9' : 'white',
+                                                    color: isSelected ? 'var(--color-primary)' : '#334155',
+                                                    fontWeight: isSelected ? 'bold' : 'normal',
+                                                    cursor: 'pointer',
+                                                    transition: 'all 0.15s ease',
+                                                    textAlign: 'left'
+                                                }}
+                                            >
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                    <div style={{
+                                                        width: '18px',
+                                                        height: '18px',
+                                                        borderRadius: '50%',
+                                                        border: isSelected ? '5px solid var(--color-primary)' : '2px solid #cbd5e1',
+                                                        boxSizing: 'border-box'
+                                                    }} />
+                                                    <span style={{ fontSize: '0.9rem' }}>{packOption.name}</span>
+                                                </div>
+                                                <span style={{ fontSize: '0.95rem', fontWeight: 'bold', color: isSelected ? 'var(--color-primary)' : '#0f172a' }}>
+                                                    {formatPrice(packOption.price)}
+                                                </span>
+                                            </button>
+                                        );
+                                    })}
                                 </div>
                             </div>
                         )}
@@ -264,7 +271,7 @@ const ProductDetailModal = ({ product, onClose }) => {
                                 marginBottom: '15px'
                             }}>
                                 <span style={{ fontSize: '0.9rem', fontWeight: '600', color: '#334155' }}>
-                                    Cantidad de {isUnitMode ? `${unitName}s` : 'paquetes'}:
+                                    Cantidad {hasPacks && selectedPack ? `de ${selectedPack.name}` : ''}:
                                 </span>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                     <button

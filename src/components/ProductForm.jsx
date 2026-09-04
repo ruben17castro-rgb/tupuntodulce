@@ -10,9 +10,8 @@ const ProductForm = ({ product, onSave, onCancel }) => {
         image: '',
         stock: 0,
         active: true,
-        allowUnitSale: false,
-        unitName: 'unidad',
-        unitPrice: ''
+        hasPacks: false,
+        packs: []
     });
 
     const [uploading, setUploading] = useState(false);
@@ -23,9 +22,8 @@ const ProductForm = ({ product, onSave, onCancel }) => {
             setFormData({
                 ...product,
                 stock: product.stock !== undefined ? product.stock : 0,
-                allowUnitSale: Boolean(product.allowUnitSale),
-                unitName: product.unitName || 'unidad',
-                unitPrice: product.unitPrice !== undefined && product.unitPrice !== null ? product.unitPrice : ''
+                hasPacks: Boolean(product.hasPacks),
+                packs: Array.isArray(product.packs) ? product.packs : []
             });
         }
     }, [product]);
@@ -33,6 +31,31 @@ const ProductForm = ({ product, onSave, onCancel }) => {
     const handleChange = (e) => {
         const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
         setFormData({ ...formData, [e.target.name]: value });
+    };
+
+    const handleAddPack = () => {
+        setFormData(prev => ({
+            ...prev,
+            packs: [
+                ...prev.packs,
+                { id: `pack_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`, name: '', price: '' }
+            ]
+        }));
+    };
+
+    const handlePackChange = (index, field, value) => {
+        setFormData(prev => {
+            const newPacks = [...prev.packs];
+            newPacks[index] = { ...newPacks[index], [field]: value };
+            return { ...prev, packs: newPacks };
+        });
+    };
+
+    const handleRemovePack = (index) => {
+        setFormData(prev => ({
+            ...prev,
+            packs: prev.packs.filter((_, idx) => idx !== index)
+        }));
     };
 
     const handleImageUpload = async (e) => {
@@ -55,13 +78,22 @@ const ProductForm = ({ product, onSave, onCancel }) => {
     const handleSubmit = (e) => {
         e.preventDefault();
         try {
+            const cleanPacks = formData.hasPacks
+                ? (formData.packs || [])
+                    .filter(p => p && p.name && p.name.trim() !== '')
+                    .map(p => ({
+                        id: p.id || `pack_${Date.now()}`,
+                        name: p.name.trim(),
+                        price: Number(p.price) || Number(formData.price)
+                    }))
+                : [];
+
             onSave({
                 ...formData,
                 price: Number(formData.price),
                 stock: Number(formData.stock),
-                allowUnitSale: Boolean(formData.allowUnitSale),
-                unitName: formData.unitName || 'unidad',
-                unitPrice: formData.allowUnitSale && formData.unitPrice !== '' ? Number(formData.unitPrice) : Number(formData.price),
+                hasPacks: Boolean(formData.hasPacks) && cleanPacks.length > 0,
+                packs: cleanPacks,
                 id: product ? product.id : undefined // Keep ID if editing
             });
         } catch (error) {
@@ -142,50 +174,80 @@ const ProductForm = ({ product, onSave, onCancel }) => {
                         </div>
                     </div>
 
-                    {/* Venta por Unidades / Piezas */}
+                    {/* Venta por Packs / Formatos */}
                     <div style={{
                         backgroundColor: '#f8fafc',
                         border: '1px solid #e2e8f0',
                         borderRadius: 'var(--radius-sm)',
-                        padding: '12px 15px',
+                        padding: '15px',
                         marginBottom: '15px'
                     }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: formData.hasPacks ? '12px' : '0' }}>
                             <input
                                 type="checkbox"
-                                name="allowUnitSale"
-                                id="allowUnitSale"
-                                checked={formData.allowUnitSale}
-                                onChange={handleChange}
+                                name="hasPacks"
+                                id="hasPacks"
+                                checked={formData.hasPacks}
+                                onChange={(e) => {
+                                    const checked = e.target.checked;
+                                    setFormData(prev => ({
+                                        ...prev,
+                                        hasPacks: checked,
+                                        packs: checked && prev.packs.length === 0
+                                            ? [
+                                                { id: `pack_${Date.now()}_1`, name: 'Pack x6', price: '' },
+                                                { id: `pack_${Date.now()}_2`, name: 'Pack x12', price: '' }
+                                              ]
+                                            : prev.packs
+                                    }));
+                                }}
                                 style={{ width: 'auto' }}
                             />
-                            <label htmlFor="allowUnitSale" style={{ fontWeight: '600', fontSize: '0.95rem', cursor: 'pointer' }}>
-                                Permitir venta por unidades / piezas (ej: venta individual de galletas)
+                            <label htmlFor="hasPacks" style={{ fontWeight: '600', fontSize: '0.95rem', cursor: 'pointer' }}>
+                                Activar Venta por Packs / Formatos (ej: Pack x6, Pack x12)
                             </label>
                         </div>
 
-                        {formData.allowUnitSale && (
-                            <div style={{ marginTop: '12px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-                                <div>
-                                    <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.85rem', fontWeight: '500' }}>Nombre Unidad (ej: galleta, porción)</label>
-                                    <input
-                                        type="text"
-                                        name="unitName"
-                                        placeholder="galleta"
-                                        value={formData.unitName}
-                                        onChange={handleChange}
-                                    />
-                                </div>
-                                <div>
-                                    <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.85rem', fontWeight: '500' }}>Precio por Unidad (CLP)</label>
-                                    <input
-                                        type="number"
-                                        name="unitPrice"
-                                        placeholder={formData.price ? String(formData.price) : "500"}
-                                        value={formData.unitPrice}
-                                        onChange={handleChange}
-                                    />
-                                </div>
+                        {formData.hasPacks && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                <p style={{ fontSize: '0.8rem', color: '#64748b', margin: '0 0 5px 0' }}>
+                                    Configura los packs disponibles y el precio automático para cada uno:
+                                </p>
+                                {formData.packs.map((pack, idx) => (
+                                    <div key={pack.id || idx} style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                                        <input
+                                            type="text"
+                                            placeholder="ej: Pack x6 galletas"
+                                            value={pack.name}
+                                            onChange={(e) => handlePackChange(idx, 'name', e.target.value)}
+                                            style={{ flex: 2, padding: '8px', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '0.85rem' }}
+                                        />
+                                        <input
+                                            type="number"
+                                            placeholder="Precio (CLP)"
+                                            value={pack.price}
+                                            onChange={(e) => handlePackChange(idx, 'price', e.target.value)}
+                                            style={{ flex: 1, padding: '8px', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '0.85rem' }}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => handleRemovePack(idx)}
+                                            style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '5px' }}
+                                            title="Eliminar pack"
+                                        >
+                                            <X size={18} />
+                                        </button>
+                                    </div>
+                                ))}
+
+                                <button
+                                    type="button"
+                                    onClick={handleAddPack}
+                                    className="btn btn-secondary"
+                                    style={{ fontSize: '0.85rem', padding: '6px 12px', marginTop: '5px', alignSelf: 'flex-start' }}
+                                >
+                                    + Agregar otro Pack
+                                </button>
                             </div>
                         )}
                     </div>

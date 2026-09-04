@@ -135,20 +135,34 @@ const ProductCard = ({ product, onSelect }) => {
                     gap: '8px'
                 }}>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <span
-                            key={`price-${productId}`}
-                            className="product-card-price"
-                            style={{
-                                fontSize: '1.1rem',
-                                fontWeight: 'bold',
-                                color: 'var(--color-primary)'
-                            }}
-                        >
-                            {formatPrice(product.price)}
-                        </span>
-                        {product.allowUnitSale && (
-                            <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: '500' }}>
-                                ({formatPrice(product.unitPrice || product.price)} c/{product.unitName || 'unidad'})
+                        {product.hasPacks && Array.isArray(product.packs) && product.packs.length > 0 ? (
+                            <>
+                                <span
+                                    key={`price-${productId}`}
+                                    className="product-card-price"
+                                    style={{
+                                        fontSize: '1.1rem',
+                                        fontWeight: 'bold',
+                                        color: 'var(--color-primary)'
+                                    }}
+                                >
+                                    Desde {formatPrice(Math.min(...product.packs.map(p => Number(p.price) || Number(product.price))))}
+                                </span>
+                                <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: '500' }}>
+                                    {product.packs.length} {product.packs.length === 1 ? 'pack disponible' : 'packs disponibles'}
+                                </span>
+                            </>
+                        ) : (
+                            <span
+                                key={`price-${productId}`}
+                                className="product-card-price"
+                                style={{
+                                    fontSize: '1.1rem',
+                                    fontWeight: 'bold',
+                                    color: 'var(--color-primary)'
+                                }}
+                            >
+                                {formatPrice(product.price)}
                             </span>
                         )}
                     </div>
@@ -157,7 +171,7 @@ const ProductCard = ({ product, onSelect }) => {
                         key={`btn-${productId}`}
                         onClick={(e) => {
                             e.stopPropagation();
-                            if (product.allowUnitSale) {
+                            if (product.hasPacks && Array.isArray(product.packs) && product.packs.length > 0) {
                                 onSelect();
                             } else {
                                 addToCart(product);
@@ -183,8 +197,8 @@ const ProductCard = ({ product, onSelect }) => {
                     >
                         {isOutOfStock ? (
                             <span key={`label-out-${productId}`}>Agotado</span>
-                        ) : product.allowUnitSale ? (
-                            <span key={`label-opt-${productId}`}>Elegir Unidades</span>
+                        ) : (product.hasPacks && Array.isArray(product.packs) && product.packs.length > 0) ? (
+                            <span key={`label-opt-${productId}`}>Ver Packs</span>
                         ) : (
                             <>
                                 <motion.div

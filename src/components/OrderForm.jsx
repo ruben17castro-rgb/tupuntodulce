@@ -13,11 +13,20 @@ const OrderForm = ({ products, onSave, onCancel }) => {
 
     const [selectedProductId, setSelectedProductId] = useState('');
     const [selectedQuantity, setSelectedQuantity] = useState(1);
-    const [selectedFormat, setSelectedFormat] = useState('package'); // 'package' or 'unit'
+    const [selectedPackId, setSelectedPackId] = useState('');
 
     const selectedProductObj = React.useMemo(() => {
         return products.find(p => String(p.id) === String(selectedProductId));
     }, [products, selectedProductId]);
+
+    // Auto-select first pack when selecting product
+    React.useEffect(() => {
+        if (selectedProductObj && selectedProductObj.hasPacks && Array.isArray(selectedProductObj.packs) && selectedProductObj.packs.length > 0) {
+            setSelectedPackId(String(selectedProductObj.packs[0].id));
+        } else {
+            setSelectedPackId('');
+        }
+    }, [selectedProductObj]);
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -26,17 +35,16 @@ const OrderForm = ({ products, onSave, onCancel }) => {
     const handleAddItem = () => {
         if (!selectedProductId || !selectedProductObj) return;
 
-        const isUnit = selectedProductObj.allowUnitSale && selectedFormat === 'unit';
-        const unitName = selectedProductObj.unitName || 'unidad';
-        const unitPrice = selectedProductObj.unitPrice !== undefined && selectedProductObj.unitPrice !== null
-            ? Number(selectedProductObj.unitPrice)
-            : Number(selectedProductObj.price);
+        const hasPacks = Boolean(selectedProductObj.hasPacks) && Array.isArray(selectedProductObj.packs) && selectedProductObj.packs.length > 0;
+        const chosenPack = hasPacks
+            ? (selectedProductObj.packs.find(p => String(p.id) === String(selectedPackId)) || selectedProductObj.packs[0])
+            : null;
 
-        const itemId = isUnit ? `${selectedProductObj.id}_unit_${unitName}` : String(selectedProductObj.id);
-        const itemName = isUnit
-            ? `${selectedProductObj.name} (por ${unitName})`
+        const itemId = chosenPack ? `${selectedProductObj.id}_pack_${chosenPack.id}` : String(selectedProductObj.id);
+        const itemName = chosenPack
+            ? `${selectedProductObj.name} (${chosenPack.name})`
             : selectedProductObj.name;
-        const itemPrice = isUnit ? unitPrice : Number(selectedProductObj.price);
+        const itemPrice = chosenPack ? Number(chosenPack.price) : Number(selectedProductObj.price);
 
         // Check if already in items
         const existingItemIndex = formData.items.findIndex(i => String(i.id) === String(itemId));
@@ -56,8 +64,7 @@ const OrderForm = ({ products, onSave, onCancel }) => {
                         price: itemPrice,
                         quantity: Number(selectedQuantity),
                         currentStock: selectedProductObj.stock,
-                        isUnitSale: isUnit,
-                        unitName: isUnit ? unitName : null
+                        selectedPack: chosenPack
                     }
                 ]
             });
@@ -66,7 +73,7 @@ const OrderForm = ({ products, onSave, onCancel }) => {
         // Reset inputs
         setSelectedProductId('');
         setSelectedQuantity(1);
-        setSelectedFormat('package');
+        setSelectedPackId('');
     };
 
     const handleRemoveItem = (indexToRemove) => {
@@ -199,16 +206,13 @@ const OrderForm = ({ products, onSave, onCancel }) => {
                                 <div style={{ flex: 1 }}>
                                     <select 
                                         value={selectedProductId} 
-                                        onChange={(e) => {
-                                            setSelectedProductId(e.target.value);
-                                            setSelectedFormat('package');
-                                        }}
+                                        onChange={(e) => setSelectedProductId(e.target.value)}
                                         style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #cbd5e1' }}
                                     >
                                         <option value="">Selecciona un producto...</option>
                                         {products.filter(p => p.active).map(p => (
                                             <option key={p.id} value={p.id}>
-                                                {p.name} - ${p.price} {p.allowUnitSale ? `($${p.unitPrice || p.price} c/${p.unitName || 'u'})` : ''} (Stock: {p.stock || 0})
+                                                {p.name} - ${p.price} {p.hasPacks && p.packs?.length > 0 ? `(${p.packs.length} packs)` : ''} (Stock: {p.stock || 0})
                                             </option>
                                         ))}
                                     </select>
@@ -233,29 +237,21 @@ const OrderForm = ({ products, onSave, onCancel }) => {
                                 </button>
                             </div>
 
-                            {selectedProductObj?.allowUnitSale && (
-                                <div style={{ display: 'flex', gap: '15px', alignItems: 'center', backgroundColor: '#ffffff', padding: '8px 12px', borderRadius: '4px', border: '1px solid #e2e8f0' }}>
-                                    <span style={{ fontSize: '0.85rem', fontWeight: '600', color: '#475569' }}>Formato:</span>
-                                    <label style={{ fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer' }}>
-                                        <input
-                                            type="radio"
-                                            name="manualOrderFormat"
-                                            value="package"
-                                            checked={selectedFormat === 'package'}
-                                            onChange={() => setSelectedFormat('package')}
-                                        />
-                                        Paquete Completo (${selectedProductObj.price.toLocaleString('es-CL')})
-                                    </label>
-                                    <label style={{ fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer' }}>
-                                        <input
-                                            type="radio"
-                                            name="manualOrderFormat"
-                                            value="unit"
-                                            checked={selectedFormat === 'unit'}
-                                            onChange={() => setSelectedFormat('unit')}
-                                        />
-                                        Por {selectedProductObj.unitName || 'unidad'} (${(selectedProductObj.unitPrice || selectedProductObj.price).toLocaleString('es-CL')} c/u)
-                                    </label>
+                            {selectedProductObj?.hasPacks && Array.isArray(selectedProductObj.packs) && selectedProductObj.packs.length > 0 && (
+                                <div style={{ display: 'flex', gap: '15px', alignItems: 'center', backgroundColor: '#ffffff', padding: '8px 12px', borderRadius: '4px', border: '1px solid #e2e8f0', flexWrap: 'wrap' }}>
+                                    <span style={{ fontSize: '0.85rem', fontWeight: '600', color: '#475569' }}>Seleccionar Pack:</span>
+                                    {selectedProductObj.packs.map(pack => (
+                                        <label key={pack.id} style={{ fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer' }}>
+                                            <input
+                                                type="radio"
+                                                name="manualOrderPack"
+                                                value={pack.id}
+                                                checked={selectedPackId === String(pack.id)}
+                                                onChange={() => setSelectedPackId(String(pack.id))}
+                                            />
+                                            {pack.name} (${Number(pack.price).toLocaleString('es-CL')})
+                                        </label>
+                                    ))}
                                 </div>
                             )}
                         </div>

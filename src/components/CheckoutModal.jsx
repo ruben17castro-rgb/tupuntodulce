@@ -82,8 +82,7 @@ const CheckoutModal = () => {
                     name: item.name,
                     price: item.price,
                     quantity: item.quantity,
-                    isUnitSale: item.isUnitSale || false,
-                    unitName: item.unitName || null
+                    selectedPack: item.selectedPack || null
                 })),
                 total: cartTotal
             };

@@ -19,10 +19,9 @@ export const CartProvider = ({ children }) => {
                         id: item?.id,
                         productId: item?.productId || item?.id,
                         quantity: Number(item?.quantity) || 1,
-                        isUnitSale: Boolean(item?.isUnitSale),
-                        unitName: item?.unitName || null,
-                        unitPrice: item?.unitPrice !== undefined ? Number(item?.unitPrice) : null,
-                        customName: item?.customName || null
+                        packPrice: item?.packPrice !== undefined && item?.packPrice !== null ? Number(item?.packPrice) : null,
+                        customName: item?.customName || null,
+                        selectedPack: item?.selectedPack || null
                     })).filter(item => item.id !== undefined && item.id !== null);
                 }
             }
@@ -44,10 +43,9 @@ export const CartProvider = ({ children }) => {
                     id: item.id,
                     productId: item.productId || item.id,
                     quantity: Number(item.quantity) || 1,
-                    isUnitSale: Boolean(item.isUnitSale),
-                    unitName: item.unitName || null,
-                    unitPrice: item.unitPrice !== undefined ? item.unitPrice : null,
-                    customName: item.customName || null
+                    packPrice: item.packPrice !== undefined ? item.packPrice : null,
+                    customName: item.customName || null,
+                    selectedPack: item.selectedPack || null
                 }));
             localStorage.setItem('tpd_cart', JSON.stringify(thinCart));
         } catch (e) {
@@ -67,12 +65,12 @@ export const CartProvider = ({ children }) => {
             if (!productInfo && !cartItem.customName) return null;
 
             const baseName = productInfo?.name || 'Producto';
-            const displayName = cartItem.customName || (cartItem.isUnitSale && cartItem.unitName
-                ? `${baseName} (${cartItem.quantity} ${cartItem.unitName}${cartItem.quantity > 1 ? 's' : ''})`
+            const displayName = cartItem.customName || (cartItem.selectedPack?.name
+                ? `${baseName} (${cartItem.selectedPack.name})`
                 : baseName);
 
-            const finalPrice = cartItem.isUnitSale && cartItem.unitPrice !== null && cartItem.unitPrice !== undefined
-                ? Number(cartItem.unitPrice)
+            const finalPrice = cartItem.packPrice !== null && cartItem.packPrice !== undefined
+                ? Number(cartItem.packPrice)
                 : Number(productInfo?.price || 0);
 
             return {
@@ -104,16 +102,15 @@ export const CartProvider = ({ children }) => {
         const stock = product.stock !== undefined ? Number(product.stock) : Infinity;
         if (stock <= 0) return;
 
-        const isUnitSale = Boolean(options?.isUnitSale);
-        const unitName = options?.unitName || product.unitName || 'unidad';
-        const unitPrice = options?.unitPrice !== undefined ? Number(options.unitPrice) : Number(product.unitPrice || product.price);
+        const selectedPack = options?.selectedPack || null;
+        const packPrice = selectedPack && selectedPack.price !== undefined ? Number(selectedPack.price) : Number(product.price);
 
-        const cartItemId = isUnitSale
-            ? `${product.id}_unit_${unitName}`
+        const cartItemId = selectedPack
+            ? `${product.id}_pack_${selectedPack.id}`
             : String(product.id);
 
-        const customName = isUnitSale
-            ? `${product.name} (por ${unitName})`
+        const customName = selectedPack
+            ? `${product.name} (${selectedPack.name})`
             : product.name;
 
         setCart(prev => {
@@ -121,8 +118,7 @@ export const CartProvider = ({ children }) => {
             const existing = current.find(item => String(item.id) === String(cartItemId));
             if (existing) {
                 const currentQty = Number(existing.quantity) || 0;
-                const maxAllowed = isUnitSale ? 9999 : stock;
-                const newQty = Math.min(currentQty + quantity, maxAllowed);
+                const newQty = Math.min(currentQty + quantity, stock);
 
                 return current.map(item =>
                     String(item.id) === String(cartItemId)
@@ -133,11 +129,10 @@ export const CartProvider = ({ children }) => {
             return [...current, {
                 id: cartItemId,
                 productId: product.id,
-                quantity: Math.min(quantity, isUnitSale ? 9999 : stock),
-                isUnitSale,
-                unitName: isUnitSale ? unitName : null,
-                unitPrice: isUnitSale ? unitPrice : null,
-                customName
+                quantity: Math.min(quantity, stock),
+                packPrice,
+                customName,
+                selectedPack
             }];
         });
         setIsCartOpen(true);
