@@ -6,7 +6,9 @@ const ProductDetailModal = ({ product, onClose }) => {
     const { addToCart } = useCart();
 
     const hasPacks = Boolean(product?.hasPacks) && Array.isArray(product?.packs) && product.packs.length > 0;
-    const [selectedPack, setSelectedPack] = useState(() => (hasPacks ? product.packs[0] : null));
+    const [selectedPack, setSelectedPack] = useState(() => (hasPacks
+        ? (product.packs.find(p => (Number(p.stock) || 0) > 0) || product.packs[0])
+        : null));
     const [quantity, setQuantity] = useState(1);
 
     if (!product) return null;
@@ -19,7 +21,9 @@ const ProductDetailModal = ({ product, onClose }) => {
         }).format(val);
     };
 
-    const stock = product.stock !== undefined ? Number(product.stock) : 0;
+    const stock = hasPacks && selectedPack
+        ? Number(selectedPack.stock) || 0
+        : (product.stock !== undefined ? Number(product.stock) : 0);
     const isOutOfStock = stock <= 0;
 
     // Precio unitario por pack o precio estándar
@@ -190,7 +194,9 @@ const ProductDetailModal = ({ product, onClose }) => {
                                 borderRadius: '20px',
                                 fontWeight: '600'
                             }}>
-                                {product.stock !== undefined ? `Stock: ${product.stock}` : 'Entrega Inmediata'}
+                                {hasPacks && selectedPack
+                                    ? `Stock: ${stock}`
+                                    : (product.stock !== undefined ? `Stock: ${stock}` : 'Entrega Inmediata')}
                             </span>
                         </div>
 
@@ -219,11 +225,13 @@ const ProductDetailModal = ({ product, onClose }) => {
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                     {product.packs.map((packOption) => {
                                         const isSelected = selectedPack?.id === packOption.id;
+                                        const packOutOfStock = (Number(packOption.stock) || 0) <= 0;
                                         return (
                                             <button
                                                 key={packOption.id}
                                                 type="button"
-                                                onClick={() => setSelectedPack(packOption)}
+                                                onClick={() => !packOutOfStock && setSelectedPack(packOption)}
+                                                disabled={packOutOfStock}
                                                 style={{
                                                     display: 'flex',
                                                     alignItems: 'center',
@@ -231,10 +239,11 @@ const ProductDetailModal = ({ product, onClose }) => {
                                                     padding: '10px 14px',
                                                     borderRadius: 'var(--radius-sm)',
                                                     border: isSelected ? '2px solid var(--color-primary)' : '1px solid #cbd5e1',
-                                                    backgroundColor: isSelected ? '#f0f9f9' : 'white',
-                                                    color: isSelected ? 'var(--color-primary)' : '#334155',
+                                                    backgroundColor: packOutOfStock ? '#f1f5f9' : (isSelected ? '#f0f9f9' : 'white'),
+                                                    color: packOutOfStock ? '#94a3b8' : (isSelected ? 'var(--color-primary)' : '#334155'),
                                                     fontWeight: isSelected ? 'bold' : 'normal',
-                                                    cursor: 'pointer',
+                                                    cursor: packOutOfStock ? 'not-allowed' : 'pointer',
+                                                    opacity: packOutOfStock ? 0.6 : 1,
                                                     transition: 'all 0.15s ease',
                                                     textAlign: 'left'
                                                 }}
@@ -247,7 +256,9 @@ const ProductDetailModal = ({ product, onClose }) => {
                                                         border: isSelected ? '5px solid var(--color-primary)' : '2px solid #cbd5e1',
                                                         boxSizing: 'border-box'
                                                     }} />
-                                                    <span style={{ fontSize: '0.9rem' }}>{packOption.name}</span>
+                                                    <span style={{ fontSize: '0.9rem' }}>
+                                                        {packOption.name}{packOutOfStock ? ' (Agotado)' : ''}
+                                                    </span>
                                                 </div>
                                                 <span style={{ fontSize: '0.95rem', fontWeight: 'bold', color: isSelected ? 'var(--color-primary)' : '#0f172a' }}>
                                                     {formatPrice(packOption.price)}

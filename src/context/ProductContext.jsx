@@ -72,6 +72,7 @@ export const ProductProvider = ({ children }) => {
             // Descuento atómico: pasamos la cantidad y Firestore aplica increment(-qty)
             const itemsToUpdate = cartItems.map(item => ({
                 id: item.id,
+                packId: item.packId || null,
                 quantity: Number(item.quantity) || 0
             }));
             await discountStockFirebase(itemsToUpdate);

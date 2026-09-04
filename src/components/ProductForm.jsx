@@ -18,7 +18,6 @@ const ProductForm = ({ product, onSave, onCancel }) => {
 
     useEffect(() => {
         if (product) {
-            // eslint-disable-next-line
             setFormData({
                 ...product,
                 stock: product.stock !== undefined ? product.stock : 0,
@@ -38,7 +37,7 @@ const ProductForm = ({ product, onSave, onCancel }) => {
             ...prev,
             packs: [
                 ...prev.packs,
-                { id: `pack_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`, name: '', price: '' }
+                { id: `pack_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`, name: '', price: '', stock: '' }
             ]
         }));
     };
@@ -84,15 +83,17 @@ const ProductForm = ({ product, onSave, onCancel }) => {
                     .map(p => ({
                         id: p.id || `pack_${Date.now()}`,
                         name: p.name.trim(),
-                        price: Number(p.price) || Number(formData.price)
+                        price: Number(p.price) || 0,
+                        stock: Number(p.stock) || 0
                     }))
                 : [];
+            const finalHasPacks = Boolean(formData.hasPacks) && cleanPacks.length > 0;
 
             onSave({
                 ...formData,
-                price: Number(formData.price),
-                stock: Number(formData.stock),
-                hasPacks: Boolean(formData.hasPacks) && cleanPacks.length > 0,
+                price: finalHasPacks ? 0 : Number(formData.price),
+                stock: finalHasPacks ? 0 : Number(formData.stock),
+                hasPacks: finalHasPacks,
                 packs: cleanPacks,
                 id: product ? product.id : undefined // Keep ID if editing
             });
@@ -150,29 +151,31 @@ const ProductForm = ({ product, onSave, onCancel }) => {
                         />
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '15px' }}>
-                        <div>
-                            <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Precio (CLP)</label>
-                            <input
-                                type="number"
-                                name="price"
-                                required
-                                value={formData.price}
-                                onChange={handleChange}
-                            />
+                    {!formData.hasPacks && (
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '15px' }}>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Precio (CLP)</label>
+                                <input
+                                    type="number"
+                                    name="price"
+                                    required
+                                    value={formData.price}
+                                    onChange={handleChange}
+                                />
+                            </div>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Stock</label>
+                                <input
+                                    type="number"
+                                    name="stock"
+                                    required
+                                    min="0"
+                                    value={formData.stock}
+                                    onChange={handleChange}
+                                />
+                            </div>
                         </div>
-                        <div>
-                            <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Stock</label>
-                            <input
-                                type="number"
-                                name="stock"
-                                required
-                                min="0"
-                                value={formData.stock}
-                                onChange={handleChange}
-                            />
-                        </div>
-                    </div>
+                    )}
 
                     {/* Venta por Packs / Formatos */}
                     <div style={{
@@ -195,8 +198,8 @@ const ProductForm = ({ product, onSave, onCancel }) => {
                                         hasPacks: checked,
                                         packs: checked && prev.packs.length === 0
                                             ? [
-                                                { id: `pack_${Date.now()}_1`, name: 'Pack x6', price: '' },
-                                                { id: `pack_${Date.now()}_2`, name: 'Pack x12', price: '' }
+                                                { id: `pack_${Date.now()}_1`, name: 'Pack x6', price: '', stock: '' },
+                                                { id: `pack_${Date.now()}_2`, name: 'Pack x12', price: '', stock: '' }
                                               ]
                                             : prev.packs
                                     }));
@@ -227,6 +230,13 @@ const ProductForm = ({ product, onSave, onCancel }) => {
                                             placeholder="Precio (CLP)"
                                             value={pack.price}
                                             onChange={(e) => handlePackChange(idx, 'price', e.target.value)}
+                                            style={{ flex: 1, padding: '8px', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '0.85rem' }}
+                                        />
+                                        <input
+                                            type="number"
+                                            placeholder="Stock"
+                                            value={pack.stock}
+                                            onChange={(e) => handlePackChange(idx, 'stock', e.target.value)}
                                             style={{ flex: 1, padding: '8px', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '0.85rem' }}
                                         />
                                         <button

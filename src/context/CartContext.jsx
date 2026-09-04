@@ -73,11 +73,16 @@ export const CartProvider = ({ children }) => {
                 ? Number(cartItem.packPrice)
                 : Number(productInfo?.price || 0);
 
+            const effectiveStock = cartItem.selectedPack
+                ? Number(cartItem.selectedPack.stock) || 0
+                : (productInfo?.stock !== undefined ? Number(productInfo.stock) : Infinity);
+
             return {
                 ...productInfo,
                 ...cartItem,
                 name: displayName,
                 price: finalPrice,
+                stock: effectiveStock,
                 quantity: Number(cartItem.quantity) || 1
             };
         }).filter(item => item !== null);
@@ -98,11 +103,14 @@ export const CartProvider = ({ children }) => {
     const addToCart = useCallback((product, quantity = 1, options = null) => {
         if (!product || !product.id) return;
 
-        // Prevent adding if out of stock
-        const stock = product.stock !== undefined ? Number(product.stock) : Infinity;
+        const selectedPack = options?.selectedPack || null;
+
+        // Prevent adding if out of stock (check the pack's own stock when a pack is selected)
+        const stock = selectedPack
+            ? (selectedPack.stock !== undefined ? Number(selectedPack.stock) : Infinity)
+            : (product.stock !== undefined ? Number(product.stock) : Infinity);
         if (stock <= 0) return;
 
-        const selectedPack = options?.selectedPack || null;
         const packPrice = selectedPack && selectedPack.price !== undefined ? Number(selectedPack.price) : Number(product.price);
 
         const cartItemId = selectedPack

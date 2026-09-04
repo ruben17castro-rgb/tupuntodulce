@@ -10,6 +10,7 @@ import {
     query,
     orderBy,
     increment,
+    runTransaction,
     serverTimestamp
 } from "firebase/firestore";
 import { db } from "../firebase/config";
@@ -29,7 +30,16 @@ const mapFromFirestore = (doc) => {
         price: Number(data.precio) || 0,
         image: data.imagen || '',
         stock: Number(data.stock) || 0,
-        active: data.activo ?? true
+        active: data.activo ?? true,
+        hasPacks: Boolean(data.hasPacks),
+        packs: Array.isArray(data.packs)
+            ? data.packs.map(p => ({
+                id: p.id,
+                name: p.name || '',
+                price: Number(p.price) || 0,
+                stock: Number(p.stock) || 0
+            }))
+            : []
     };
 };
 
@@ -43,7 +53,16 @@ const mapToFirestore = (data) => {
         precio: Number(data.price) || 0,
         imagen: data.image || '',
         stock: Number(data.stock) || 0,
-        activo: data.active ?? true
+        activo: data.active ?? true,
+        hasPacks: Boolean(data.hasPacks),
+        packs: Array.isArray(data.packs)
+            ? data.packs.map(p => ({
+                id: p.id,
+                name: p.name || '',
+                price: Number(p.price) || 0,
+                stock: Number(p.stock) || 0
+            }))
+            : []
     };
 };
 
@@ -65,16 +84,40 @@ export const subscribeToProducts = (callback) => {
  * Descuenta el stock de varios productos de forma atómica (Checkout).
  * Usa increment(-cantidad) para evitar condiciones de carrera (sobreventa)
  * entre pedidos simultáneos.
+ * Si el item trae packId, descuenta el stock de ese pack específico
+ * (dentro del array `packs`) usando una transacción, ya que Firestore
+ * no soporta increment() sobre un elemento de un array.
  */
 export const discountStockFirebase = async (items) => {
     try {
-        await Promise.all(items.map((item) => {
+        const packItems = items.filter((item) => item.packId);
+        const plainItems = items.filter((item) => !item.packId);
+
+        const plainUpdates = plainItems.map((item) => {
             const productRef = doc(db, PRODUCTS_COLLECTION, item.id);
             const qty = Math.max(0, Number(item.quantity) || 0);
             return updateDoc(productRef, {
                 stock: increment(-qty)
             });
-        }));
+        });
+
+        const packUpdates = packItems.map((item) => {
+            const productRef = doc(db, PRODUCTS_COLLECTION, item.id);
+            const qty = Math.max(0, Number(item.quantity) || 0);
+            return runTransaction(db, async (transaction) => {
+                const snap = await transaction.get(productRef);
+                if (!snap.exists()) return;
+                const packs = Array.isArray(snap.data().packs) ? snap.data().packs : [];
+                const updatedPacks = packs.map((p) =>
+                    String(p.id) === String(item.packId)
+                        ? { ...p, stock: Math.max(0, (Number(p.stock) || 0) - qty) }
+                        : p
+                );
+                transaction.update(productRef, { packs: updatedPacks });
+            });
+        });
+
+        await Promise.all([...plainUpdates, ...packUpdates]);
     } catch (error) {
         console.error("Error updating stock in Firebase:", error);
         throw error;

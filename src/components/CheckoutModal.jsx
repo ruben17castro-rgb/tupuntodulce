@@ -97,7 +97,8 @@ const CheckoutModal = () => {
 
             // 2. Discount stock (Sync with storage)
             const itemsToDiscount = (Array.isArray(cart) ? cart : []).map(item => ({
-                id: item?.id,
+                id: item?.productId || item?.id,
+                packId: item?.selectedPack?.id || null,
                 quantity: Number(item?.quantity) || 1
             })).filter(i => i.id);
 

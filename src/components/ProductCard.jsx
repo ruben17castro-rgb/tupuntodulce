@@ -14,7 +14,9 @@ const ProductCard = ({ product, onSelect }) => {
         }).format(val);
     };
 
-    const stock = product?.stock !== undefined ? Number(product.stock) : 0;
+    const hasPacks = Boolean(product?.hasPacks) && Array.isArray(product?.packs) && product.packs.length > 0;
+    const packsStock = hasPacks ? product.packs.reduce((sum, p) => sum + (Number(p.stock) || 0), 0) : 0;
+    const stock = hasPacks ? packsStock : (product?.stock !== undefined ? Number(product.stock) : 0);
     const isOutOfStock = stock <= 0;
     const productId = String(product?.id || 'unknown');
 
@@ -124,7 +126,9 @@ const ProductCard = ({ product, onSelect }) => {
                 </p>
 
                 <div key={`stock-${productId}`} style={{ marginBottom: '10px', fontSize: '0.8rem', color: '#888', marginTop: 'auto' }}>
-                    {product.stock !== undefined ? `Stock: ${product.stock}` : 'Stock: Ilimitado'}
+                    {hasPacks
+                        ? `Stock: ${packsStock}`
+                        : (product.stock !== undefined ? `Stock: ${product.stock}` : 'Stock: Ilimitado')}
                 </div>
 
                 <div key={`footer-${productId}`} style={{

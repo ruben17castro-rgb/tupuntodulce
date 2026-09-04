@@ -224,7 +224,8 @@ const AdminDashboard = () => {
             
             // Descontar stock (igual que en CheckoutModal)
             const itemsToDiscount = orderData.items.map(item => ({
-                id: item.id,
+                id: item.productId || item.id,
+                packId: item.selectedPack?.id || null,
                 quantity: item.quantity
             }));
             await discountStock(itemsToDiscount);

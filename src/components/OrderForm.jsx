@@ -210,11 +210,17 @@ const OrderForm = ({ products, onSave, onCancel }) => {
                                         style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #cbd5e1' }}
                                     >
                                         <option value="">Selecciona un producto...</option>
-                                        {products.filter(p => p.active).map(p => (
-                                            <option key={p.id} value={p.id}>
-                                                {p.name} - ${p.price} {p.hasPacks && p.packs?.length > 0 ? `(${p.packs.length} packs)` : ''} (Stock: {p.stock || 0})
-                                            </option>
-                                        ))}
+                                        {products.filter(p => p.active).map(p => {
+                                            const withPacks = p.hasPacks && Array.isArray(p.packs) && p.packs.length > 0;
+                                            const packsStock = withPacks ? p.packs.reduce((sum, pk) => sum + (Number(pk.stock) || 0), 0) : 0;
+                                            return (
+                                                <option key={p.id} value={p.id}>
+                                                    {withPacks
+                                                        ? `${p.name} (${p.packs.length} packs, Stock: ${packsStock})`
+                                                        : `${p.name} - $${p.price} (Stock: ${p.stock || 0})`}
+                                                </option>
+                                            );
+                                        })}
                                     </select>
                                 </div>
                                 <div style={{ width: '80px' }}>
@@ -249,7 +255,7 @@ const OrderForm = ({ products, onSave, onCancel }) => {
                                                 checked={selectedPackId === String(pack.id)}
                                                 onChange={() => setSelectedPackId(String(pack.id))}
                                             />
-                                            {pack.name} (${Number(pack.price).toLocaleString('es-CL')})
+                                            {pack.name} (${Number(pack.price).toLocaleString('es-CL')}, Stock: {pack.stock || 0})
                                         </label>
                                     ))}
                                 </div>
