@@ -78,9 +78,12 @@ const CheckoutModal = () => {
                 comments: formData.comments,
                 items: (Array.isArray(cart) ? cart : []).map(item => ({
                     id: item.id,
+                    productId: item.productId || item.id,
                     name: item.name,
                     price: item.price,
-                    quantity: item.quantity
+                    quantity: item.quantity,
+                    isUnitSale: item.isUnitSale || false,
+                    unitName: item.unitName || null
                 })),
                 total: cartTotal
             };

@@ -1,9 +1,11 @@
-import React from 'react';
-import { X, Plus, ShoppingCart } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, Plus, Minus, ShoppingCart } from 'lucide-react';
 import { useCart } from '../context/CartContextCore';
 
 const ProductDetailModal = ({ product, onClose }) => {
     const { addToCart } = useCart();
+    const [isUnitMode, setIsUnitMode] = useState(Boolean(product?.allowUnitSale));
+    const [quantity, setQuantity] = useState(1);
 
     if (!product) return null;
 
@@ -17,6 +19,25 @@ const ProductDetailModal = ({ product, onClose }) => {
 
     const stock = product.stock !== undefined ? Number(product.stock) : 0;
     const isOutOfStock = stock <= 0;
+
+    const unitPrice = product.unitPrice !== undefined && product.unitPrice !== null ? Number(product.unitPrice) : Number(product.price);
+    const unitName = product.unitName || 'unidad';
+
+    const currentPricePerItem = isUnitMode ? unitPrice : Number(product.price);
+    const totalPriceCalculated = currentPricePerItem * quantity;
+
+    const handleAddToCart = () => {
+        if (isUnitMode) {
+            addToCart(product, quantity, {
+                isUnitSale: true,
+                unitName: unitName,
+                unitPrice: unitPrice
+            });
+        } else {
+            addToCart(product, quantity);
+        }
+        onClose();
+    };
 
     return (
         <>
@@ -141,15 +162,20 @@ const ProductDetailModal = ({ product, onClose }) => {
                             fontSize: '1.5rem',
                             fontWeight: 'bold',
                             color: 'var(--color-primary)',
-                            marginBottom: 'var(--spacing-md)'
+                            marginBottom: 'var(--spacing-xs)'
                         }}>
                             {formatPrice(product.price)}
+                            {product.allowUnitSale && (
+                                <span style={{ fontSize: '0.9rem', color: '#64748b', fontWeight: '500', marginLeft: '10px' }}>
+                                    ({formatPrice(unitPrice)} c/{unitName})
+                                </span>
+                            )}
                         </div>
 
                         <div style={{
                             fontSize: '0.9rem',
                             color: '#888',
-                            marginBottom: 'var(--spacing-lg)',
+                            marginBottom: 'var(--spacing-md)',
                             display: 'flex',
                             gap: '10px',
                             alignItems: 'center'
@@ -166,20 +192,126 @@ const ProductDetailModal = ({ product, onClose }) => {
                         </div>
 
                         <div style={{
-                            fontSize: '1rem',
-                            lineHeight: '1.6',
+                            fontSize: '0.95rem',
+                            lineHeight: '1.5',
                             color: '#444',
-                            marginBottom: 'var(--spacing-xl)',
+                            marginBottom: 'var(--spacing-md)',
                             whiteSpace: 'pre-wrap'
                         }}>
                             {product.description}
                         </div>
 
+                        {/* Selección Venta por Unidades vs Paquete */}
+                        {product.allowUnitSale && (
+                            <div style={{
+                                backgroundColor: '#f8fafc',
+                                border: '1px solid #e2e8f0',
+                                borderRadius: 'var(--radius-md)',
+                                padding: '12px',
+                                marginBottom: '15px'
+                            }}>
+                                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', color: '#475569', marginBottom: '8px' }}>
+                                    Formato de Compra:
+                                </label>
+                                <div style={{ display: 'flex', gap: '10px' }}>
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsUnitMode(true)}
+                                        style={{
+                                            flex: 1,
+                                            padding: '8px 12px',
+                                            borderRadius: 'var(--radius-sm)',
+                                            border: isUnitMode ? '2px solid var(--color-primary)' : '1px solid #cbd5e1',
+                                            backgroundColor: isUnitMode ? '#f0f9f9' : 'white',
+                                            color: isUnitMode ? 'var(--color-primary)' : '#64748b',
+                                            fontWeight: isUnitMode ? 'bold' : 'normal',
+                                            cursor: 'pointer',
+                                            fontSize: '0.85rem'
+                                        }}
+                                    >
+                                        Por {unitName}s ({formatPrice(unitPrice)} c/u)
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsUnitMode(false)}
+                                        style={{
+                                            flex: 1,
+                                            padding: '8px 12px',
+                                            borderRadius: 'var(--radius-sm)',
+                                            border: !isUnitMode ? '2px solid var(--color-primary)' : '1px solid #cbd5e1',
+                                            backgroundColor: !isUnitMode ? '#f0f9f9' : 'white',
+                                            color: !isUnitMode ? 'var(--color-primary)' : '#64748b',
+                                            fontWeight: !isUnitMode ? 'bold' : 'normal',
+                                            cursor: 'pointer',
+                                            fontSize: '0.85rem'
+                                        }}
+                                    >
+                                        Paquete Completo ({formatPrice(product.price)})
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Stepper de Cantidad */}
+                        {!isOutOfStock && (
+                            <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                backgroundColor: '#f1f5f9',
+                                padding: '10px 15px',
+                                borderRadius: 'var(--radius-md)',
+                                marginBottom: '15px'
+                            }}>
+                                <span style={{ fontSize: '0.9rem', fontWeight: '600', color: '#334155' }}>
+                                    Cantidad de {isUnitMode ? `${unitName}s` : 'paquetes'}:
+                                </span>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                    <button
+                                        type="button"
+                                        onClick={() => setQuantity(prev => Math.max(1, prev - 1))}
+                                        disabled={quantity <= 1}
+                                        style={{
+                                            width: '32px',
+                                            height: '32px',
+                                            borderRadius: '50%',
+                                            border: '1px solid #cbd5e1',
+                                            backgroundColor: 'white',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            cursor: quantity <= 1 ? 'not-allowed' : 'pointer',
+                                            opacity: quantity <= 1 ? 0.5 : 1
+                                        }}
+                                    >
+                                        <Minus size={16} color="#334155" />
+                                    </button>
+                                    <span style={{ fontSize: '1.1rem', fontWeight: 'bold', minWidth: '20px', textAlign: 'center' }}>
+                                        {quantity}
+                                    </span>
+                                    <button
+                                        type="button"
+                                        onClick={() => setQuantity(prev => prev + 1)}
+                                        style={{
+                                            width: '32px',
+                                            height: '32px',
+                                            borderRadius: '50%',
+                                            border: '1px solid #cbd5e1',
+                                            backgroundColor: 'white',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            cursor: 'pointer'
+                                        }}
+                                    >
+                                        <Plus size={16} color="#334155" />
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
                         <button
-                            onClick={() => {
-                                addToCart(product);
-                                onClose();
-                            }}
+                            onClick={handleAddToCart}
                             className="btn btn-primary"
                             disabled={isOutOfStock}
                             style={{
@@ -196,7 +328,7 @@ const ProductDetailModal = ({ product, onClose }) => {
                             }}
                         >
                             <ShoppingCart size={20} />
-                            {isOutOfStock ? 'Producto Agotado' : 'Agregar al Carrito'}
+                            {isOutOfStock ? 'Producto Agotado' : `Agregar al Carrito — ${formatPrice(totalPriceCalculated)}`}
                         </button>
                     </div>
                 </div>

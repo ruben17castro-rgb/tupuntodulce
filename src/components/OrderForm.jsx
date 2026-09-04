@@ -13,18 +13,33 @@ const OrderForm = ({ products, onSave, onCancel }) => {
 
     const [selectedProductId, setSelectedProductId] = useState('');
     const [selectedQuantity, setSelectedQuantity] = useState(1);
+    const [selectedFormat, setSelectedFormat] = useState('package'); // 'package' or 'unit'
+
+    const selectedProductObj = React.useMemo(() => {
+        return products.find(p => String(p.id) === String(selectedProductId));
+    }, [products, selectedProductId]);
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
     const handleAddItem = () => {
-        if (!selectedProductId) return;
-        const product = products.find(p => p.id === selectedProductId);
-        if (!product) return;
+        if (!selectedProductId || !selectedProductObj) return;
+
+        const isUnit = selectedProductObj.allowUnitSale && selectedFormat === 'unit';
+        const unitName = selectedProductObj.unitName || 'unidad';
+        const unitPrice = selectedProductObj.unitPrice !== undefined && selectedProductObj.unitPrice !== null
+            ? Number(selectedProductObj.unitPrice)
+            : Number(selectedProductObj.price);
+
+        const itemId = isUnit ? `${selectedProductObj.id}_unit_${unitName}` : String(selectedProductObj.id);
+        const itemName = isUnit
+            ? `${selectedProductObj.name} (por ${unitName})`
+            : selectedProductObj.name;
+        const itemPrice = isUnit ? unitPrice : Number(selectedProductObj.price);
 
         // Check if already in items
-        const existingItemIndex = formData.items.findIndex(i => i.id === product.id);
+        const existingItemIndex = formData.items.findIndex(i => String(i.id) === String(itemId));
         if (existingItemIndex >= 0) {
             const newItems = [...formData.items];
             newItems[existingItemIndex].quantity += Number(selectedQuantity);
@@ -35,11 +50,14 @@ const OrderForm = ({ products, onSave, onCancel }) => {
                 items: [
                     ...formData.items,
                     {
-                        id: product.id,
-                        name: product.name,
-                        price: product.price,
+                        id: itemId,
+                        productId: selectedProductObj.id,
+                        name: itemName,
+                        price: itemPrice,
                         quantity: Number(selectedQuantity),
-                        currentStock: product.stock // For reference when saving
+                        currentStock: selectedProductObj.stock,
+                        isUnitSale: isUnit,
+                        unitName: isUnit ? unitName : null
                     }
                 ]
             });
@@ -48,6 +66,7 @@ const OrderForm = ({ products, onSave, onCancel }) => {
         // Reset inputs
         setSelectedProductId('');
         setSelectedQuantity(1);
+        setSelectedFormat('package');
     };
 
     const handleRemoveItem = (indexToRemove) => {
@@ -175,39 +194,70 @@ const OrderForm = ({ products, onSave, onCancel }) => {
                     }}>
                         <h3 style={{ fontSize: '1rem', marginBottom: '10px' }}>Agregar Productos</h3>
                         
-                        <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-end', marginBottom: '15px' }}>
-                            <div style={{ flex: 1 }}>
-                                <select 
-                                    value={selectedProductId} 
-                                    onChange={(e) => setSelectedProductId(e.target.value)}
-                                    style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #cbd5e1' }}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '15px' }}>
+                            <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-end' }}>
+                                <div style={{ flex: 1 }}>
+                                    <select 
+                                        value={selectedProductId} 
+                                        onChange={(e) => {
+                                            setSelectedProductId(e.target.value);
+                                            setSelectedFormat('package');
+                                        }}
+                                        style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #cbd5e1' }}
+                                    >
+                                        <option value="">Selecciona un producto...</option>
+                                        {products.filter(p => p.active).map(p => (
+                                            <option key={p.id} value={p.id}>
+                                                {p.name} - ${p.price} {p.allowUnitSale ? `($${p.unitPrice || p.price} c/${p.unitName || 'u'})` : ''} (Stock: {p.stock || 0})
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div style={{ width: '80px' }}>
+                                    <input 
+                                        type="number" 
+                                        min="1"
+                                        value={selectedQuantity}
+                                        onChange={(e) => setSelectedQuantity(e.target.value)}
+                                        style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #cbd5e1' }}
+                                    />
+                                </div>
+                                <button 
+                                    type="button"
+                                    onClick={handleAddItem}
+                                    className="btn btn-secondary"
+                                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '37px', padding: '0 15px' }}
+                                    disabled={!selectedProductId}
                                 >
-                                    <option value="">Selecciona un producto...</option>
-                                    {products.filter(p => p.active).map(p => (
-                                        <option key={p.id} value={p.id}>
-                                            {p.name} - ${p.price} (Stock: {p.stock || 0})
-                                        </option>
-                                    ))}
-                                </select>
+                                    <Plus size={18} />
+                                </button>
                             </div>
-                            <div style={{ width: '80px' }}>
-                                <input 
-                                    type="number" 
-                                    min="1"
-                                    value={selectedQuantity}
-                                    onChange={(e) => setSelectedQuantity(e.target.value)}
-                                    style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #cbd5e1' }}
-                                />
-                            </div>
-                            <button 
-                                type="button"
-                                onClick={handleAddItem}
-                                className="btn btn-secondary"
-                                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '37px', padding: '0 15px' }}
-                                disabled={!selectedProductId}
-                            >
-                                <Plus size={18} />
-                            </button>
+
+                            {selectedProductObj?.allowUnitSale && (
+                                <div style={{ display: 'flex', gap: '15px', alignItems: 'center', backgroundColor: '#ffffff', padding: '8px 12px', borderRadius: '4px', border: '1px solid #e2e8f0' }}>
+                                    <span style={{ fontSize: '0.85rem', fontWeight: '600', color: '#475569' }}>Formato:</span>
+                                    <label style={{ fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer' }}>
+                                        <input
+                                            type="radio"
+                                            name="manualOrderFormat"
+                                            value="package"
+                                            checked={selectedFormat === 'package'}
+                                            onChange={() => setSelectedFormat('package')}
+                                        />
+                                        Paquete Completo (${selectedProductObj.price.toLocaleString('es-CL')})
+                                    </label>
+                                    <label style={{ fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer' }}>
+                                        <input
+                                            type="radio"
+                                            name="manualOrderFormat"
+                                            value="unit"
+                                            checked={selectedFormat === 'unit'}
+                                            onChange={() => setSelectedFormat('unit')}
+                                        />
+                                        Por {selectedProductObj.unitName || 'unidad'} (${(selectedProductObj.unitPrice || selectedProductObj.price).toLocaleString('es-CL')} c/u)
+                                    </label>
+                                </div>
+                            )}
                         </div>
 
                         {/* Lista de productos agregados */}

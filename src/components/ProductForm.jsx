@@ -9,7 +9,10 @@ const ProductForm = ({ product, onSave, onCancel }) => {
         description: '',
         image: '',
         stock: 0,
-        active: true
+        active: true,
+        allowUnitSale: false,
+        unitName: 'unidad',
+        unitPrice: ''
     });
 
     const [uploading, setUploading] = useState(false);
@@ -19,7 +22,10 @@ const ProductForm = ({ product, onSave, onCancel }) => {
             // eslint-disable-next-line
             setFormData({
                 ...product,
-                stock: product.stock !== undefined ? product.stock : 0
+                stock: product.stock !== undefined ? product.stock : 0,
+                allowUnitSale: Boolean(product.allowUnitSale),
+                unitName: product.unitName || 'unidad',
+                unitPrice: product.unitPrice !== undefined && product.unitPrice !== null ? product.unitPrice : ''
             });
         }
     }, [product]);
@@ -53,6 +59,9 @@ const ProductForm = ({ product, onSave, onCancel }) => {
                 ...formData,
                 price: Number(formData.price),
                 stock: Number(formData.stock),
+                allowUnitSale: Boolean(formData.allowUnitSale),
+                unitName: formData.unitName || 'unidad',
+                unitPrice: formData.allowUnitSale && formData.unitPrice !== '' ? Number(formData.unitPrice) : Number(formData.price),
                 id: product ? product.id : undefined // Keep ID if editing
             });
         } catch (error) {
@@ -131,6 +140,54 @@ const ProductForm = ({ product, onSave, onCancel }) => {
                                 onChange={handleChange}
                             />
                         </div>
+                    </div>
+
+                    {/* Venta por Unidades / Piezas */}
+                    <div style={{
+                        backgroundColor: '#f8fafc',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: 'var(--radius-sm)',
+                        padding: '12px 15px',
+                        marginBottom: '15px'
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <input
+                                type="checkbox"
+                                name="allowUnitSale"
+                                id="allowUnitSale"
+                                checked={formData.allowUnitSale}
+                                onChange={handleChange}
+                                style={{ width: 'auto' }}
+                            />
+                            <label htmlFor="allowUnitSale" style={{ fontWeight: '600', fontSize: '0.95rem', cursor: 'pointer' }}>
+                                Permitir venta por unidades / piezas (ej: venta individual de galletas)
+                            </label>
+                        </div>
+
+                        {formData.allowUnitSale && (
+                            <div style={{ marginTop: '12px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.85rem', fontWeight: '500' }}>Nombre Unidad (ej: galleta, porción)</label>
+                                    <input
+                                        type="text"
+                                        name="unitName"
+                                        placeholder="galleta"
+                                        value={formData.unitName}
+                                        onChange={handleChange}
+                                    />
+                                </div>
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.85rem', fontWeight: '500' }}>Precio por Unidad (CLP)</label>
+                                    <input
+                                        type="number"
+                                        name="unitPrice"
+                                        placeholder={formData.price ? String(formData.price) : "500"}
+                                        value={formData.unitPrice}
+                                        onChange={handleChange}
+                                    />
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     <div style={{ marginBottom: '15px' }}>

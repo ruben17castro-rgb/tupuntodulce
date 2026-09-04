@@ -25,30 +25,62 @@ const AdminDashboard = () => {
     const [isOrderFormOpen, setIsOrderFormOpen] = useState(false);
     const [showReport, setShowReport] = useState(false);
     
+    const [reportType, setReportType] = useState('monthly'); // 'monthly' | 'daily'
+
     // Mes seleccionado (por defecto el actual)
     const [selectedMonth, setSelectedMonth] = useState(() => {
         const now = new Date();
         return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
     });
 
+    // Día seleccionado (por defecto hoy)
+    const [selectedDay, setSelectedDay] = useState(() => {
+        const now = new Date();
+        return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    });
+
     const filteredOrders = React.useMemo(() => {
-        if (!selectedMonth) return orders;
-        const [year, month] = selectedMonth.split('-');
         return orders.filter(order => {
             if (!order.createdAt) return false;
             const d = new Date(order.createdAt);
-            return d.getFullYear() === parseInt(year) && d.getMonth() + 1 === parseInt(month);
+            if (reportType === 'daily') {
+                if (!selectedDay) return true;
+                const [year, month, day] = selectedDay.split('-').map(Number);
+                return d.getFullYear() === year && (d.getMonth() + 1) === month && d.getDate() === day;
+            } else {
+                if (!selectedMonth) return true;
+                const [year, month] = selectedMonth.split('-').map(Number);
+                return d.getFullYear() === year && (d.getMonth() + 1) === month;
+            }
         });
-    }, [orders, selectedMonth]);
+    }, [orders, reportType, selectedMonth, selectedDay]);
 
-    // Format month for display
-    const formattedMonth = React.useMemo(() => {
-        if (!selectedMonth) return 'el Mes';
-        const [year, month] = selectedMonth.split('-');
-        const date = new Date(year, month - 1);
-        const name = date.toLocaleDateString('es-CL', { month: 'long', year: 'numeric' });
-        return 'de ' + name.charAt(0).toUpperCase() + name.slice(1);
-    }, [selectedMonth]);
+    // Format period for display in titles
+    const formattedPeriod = React.useMemo(() => {
+        if (reportType === 'daily') {
+            if (!selectedDay) return 'el Día';
+            const [year, month, day] = selectedDay.split('-').map(Number);
+            const date = new Date(year, month - 1, day);
+            const formattedDateStr = date.toLocaleDateString('es-CL', { day: 'numeric', month: 'long', year: 'numeric' });
+            return 'del ' + formattedDateStr;
+        } else {
+            if (!selectedMonth) return 'el Mes';
+            const [year, month] = selectedMonth.split('-').map(Number);
+            const date = new Date(year, month - 1);
+            const name = date.toLocaleDateString('es-CL', { month: 'long', year: 'numeric' });
+            return 'de ' + name.charAt(0).toUpperCase() + name.slice(1);
+        }
+    }, [reportType, selectedMonth, selectedDay]);
+
+    const periodLabel = React.useMemo(() => {
+        if (reportType === 'daily') {
+            if (!selectedDay) return 'Todos los días';
+            const [year, month, day] = selectedDay.split('-');
+            return `${day}/${month}/${year}`;
+        } else {
+            return selectedMonth ? selectedMonth : 'Todos los meses';
+        }
+    }, [reportType, selectedMonth, selectedDay]);
 
     const reportData = React.useMemo(() => {
         const groups = {};
@@ -207,12 +239,16 @@ const AdminDashboard = () => {
 
     const generatePDFAutoTable = () => {
         if (!filteredOrders || filteredOrders.length === 0) {
-            alert("No hay pedidos para descargar en este mes.");
+            alert(`No hay pedidos para descargar en este período (${reportType === 'daily' ? 'Día' : 'Mes'}).`);
             return;
         }
 
         const doc = new window.jspdf.jsPDF();
         let yPos = 20;
+
+        const pdfSubtitle = reportType === 'daily' 
+            ? "Reporte Oficial de Pedidos — Ventas Diarias Por Producto" 
+            : "Reporte Oficial de Pedidos — Ventas Mensuales Por Producto";
 
         // Header
         doc.setFont("helvetica", "bold");
@@ -222,7 +258,7 @@ const AdminDashboard = () => {
         doc.setFont("helvetica", "normal");
         doc.setFontSize(10);
         doc.setTextColor(100);
-        doc.text("Reporte Oficial de Pedidos — Por Producto", 14, yPos + 6);
+        doc.text(pdfSubtitle, 14, yPos + 6);
         
         const dateStr = `${new Date().toLocaleDateString('es-CL')} ${new Date().toLocaleTimeString('es-CL')}`;
         doc.setFontSize(8);
@@ -255,7 +291,7 @@ const AdminDashboard = () => {
         doc.setFont("helvetica", "bold");
         doc.setFontSize(10);
         doc.setTextColor(51); // #333
-        doc.text(selectedMonth ? selectedMonth : 'Todos', 20, yPos + 14);
+        doc.text(periodLabel, 20, yPos + 14);
         doc.text(filteredOrders.length.toString(), 60, yPos + 14);
         doc.text("Fecha de entrega", 100, yPos + 14);
         
@@ -590,20 +626,75 @@ const AdminDashboard = () => {
                     </button>
                 </div>
                 {activeTab === 'orders' && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', paddingBottom: '10px' }}>
-                        <span style={{ fontSize: '0.9rem', color: '#666' }}>Filtrar por mes:</span>
-                        <input 
-                            type="month"
-                            value={selectedMonth}
-                            onChange={(e) => setSelectedMonth(e.target.value)}
-                            style={{
-                                padding: '8px 12px',
-                                borderRadius: 'var(--radius-sm)',
-                                border: '1px solid #ddd',
-                                fontSize: '0.9rem',
-                                color: '#333'
-                            }}
-                        />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '15px', paddingBottom: '10px', flexWrap: 'wrap' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', backgroundColor: '#f1f5f9', padding: '4px', borderRadius: 'var(--radius-sm)' }}>
+                            <button
+                                onClick={() => setReportType('monthly')}
+                                style={{
+                                    padding: '6px 14px',
+                                    border: 'none',
+                                    borderRadius: 'var(--radius-sm)',
+                                    backgroundColor: reportType === 'monthly' ? 'white' : 'transparent',
+                                    color: reportType === 'monthly' ? 'var(--color-primary)' : '#64748b',
+                                    fontWeight: reportType === 'monthly' ? 'bold' : '500',
+                                    boxShadow: reportType === 'monthly' ? 'var(--shadow-sm)' : 'none',
+                                    cursor: 'pointer',
+                                    fontSize: '0.85rem'
+                                }}
+                            >
+                                Reporte Mensual
+                            </button>
+                            <button
+                                onClick={() => setReportType('daily')}
+                                style={{
+                                    padding: '6px 14px',
+                                    border: 'none',
+                                    borderRadius: 'var(--radius-sm)',
+                                    backgroundColor: reportType === 'daily' ? 'white' : 'transparent',
+                                    color: reportType === 'daily' ? 'var(--color-primary)' : '#64748b',
+                                    fontWeight: reportType === 'daily' ? 'bold' : '500',
+                                    boxShadow: reportType === 'daily' ? 'var(--shadow-sm)' : 'none',
+                                    cursor: 'pointer',
+                                    fontSize: '0.85rem'
+                                }}
+                            >
+                                Reporte Diario
+                            </button>
+                        </div>
+
+                        {reportType === 'monthly' ? (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ fontSize: '0.85rem', color: '#666', fontWeight: '500' }}>Seleccionar Mes:</span>
+                                <input 
+                                    type="month"
+                                    value={selectedMonth}
+                                    onChange={(e) => setSelectedMonth(e.target.value)}
+                                    style={{
+                                        padding: '6px 12px',
+                                        borderRadius: 'var(--radius-sm)',
+                                        border: '1px solid #ddd',
+                                        fontSize: '0.85rem',
+                                        color: '#333'
+                                    }}
+                                />
+                            </div>
+                        ) : (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ fontSize: '0.85rem', color: '#666', fontWeight: '500' }}>Seleccionar Día:</span>
+                                <input 
+                                    type="date"
+                                    value={selectedDay}
+                                    onChange={(e) => setSelectedDay(e.target.value)}
+                                    style={{
+                                        padding: '6px 12px',
+                                        borderRadius: 'var(--radius-sm)',
+                                        border: '1px solid #ddd',
+                                        fontSize: '0.85rem',
+                                        color: '#333'
+                                    }}
+                                />
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
@@ -636,7 +727,7 @@ const AdminDashboard = () => {
                         <BarChart2 size={32} color="#3b82f6" />
                     </div>
                     <div style={{ minWidth: 0, flex: 1 }}>
-                        <p style={{ margin: 0, color: '#64748b', fontSize: '0.9rem', fontWeight: '500', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{activeTab === 'products' ? 'Visitas Totales' : `Ventas ${formattedMonth}`}</p>
+                        <p style={{ margin: 0, color: '#64748b', fontSize: '0.9rem', fontWeight: '500', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{activeTab === 'products' ? 'Visitas Totales' : `Ventas ${formattedPeriod}`}</p>
                         <h2 style={{ margin: 0, fontSize: '1.75rem', color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                             {activeTab === 'products' ? pageViews : `$${stats.totalSales.toLocaleString('es-CL')}`}
                         </h2>
@@ -691,7 +782,7 @@ const AdminDashboard = () => {
                                 <MessageCircle size={32} color="#ef4444" />
                             </div>
                             <div style={{ minWidth: 0, flex: 1 }}>
-                                <p style={{ margin: 0, color: '#64748b', fontSize: '0.9rem', fontWeight: '500', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Pedidos {formattedMonth}</p>
+                                <p style={{ margin: 0, color: '#64748b', fontSize: '0.9rem', fontWeight: '500', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Pedidos {formattedPeriod}</p>
                                 <h2 style={{ margin: 0, fontSize: '1.75rem', color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{stats.count}</h2>
                             </div>
                         </div>
@@ -995,7 +1086,9 @@ const AdminDashboard = () => {
                             <div style={{ borderBottom: '3px solid #3AAFA9', paddingBottom: '15px', marginBottom: '30px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
                                 <div>
                                     <h1 style={{ margin: 0, fontSize: '28px', color: '#111', fontWeight: 'bold' }}>Tu Punto Dulce</h1>
-                                    <p style={{ margin: '5px 0 0 0', color: '#666', fontSize: '14px' }}>Reporte Oficial de Pedidos — Por Producto</p>
+                                    <p style={{ margin: '5px 0 0 0', color: '#666', fontSize: '14px' }}>
+                                        Reporte Oficial de Pedidos — {reportType === 'daily' ? 'Ventas Diarias Por Producto' : 'Ventas Mensuales Por Producto'}
+                                    </p>
                                 </div>
                                 <div style={{ textAlign: 'right' }}>
                                     <p style={{ margin: 0, fontSize: '12px', color: '#999' }}>FECHA DE EMISIÓN</p>
@@ -1008,7 +1101,7 @@ const AdminDashboard = () => {
                             <div style={{ backgroundColor: '#E8F8F7', border: '1px solid #3AAFA9', borderRadius: '8px', padding: '15px', marginBottom: '30px', display: 'flex', flexWrap: 'wrap', gap: '20px' }}>
                                 <div style={{ flex: '1 1 120px' }}>
                                     <p style={{ margin: 0, fontSize: '11px', color: '#666', textTransform: 'uppercase' }}>Período</p>
-                                    <p style={{ margin: '4px 0 0 0', fontWeight: '600', fontSize: '15px', color: '#333' }}>{selectedMonth ? selectedMonth : 'Todos los tiempos'}</p>
+                                    <p style={{ margin: '4px 0 0 0', fontWeight: '600', fontSize: '15px', color: '#333' }}>{periodLabel}</p>
                                 </div>
                                 <div style={{ flex: '1 1 120px' }}>
                                     <p style={{ margin: 0, fontSize: '11px', color: '#666', textTransform: 'uppercase' }}>Total de pedidos</p>
@@ -1218,7 +1311,7 @@ const AdminDashboard = () => {
 
                     {filteredOrders.length === 0 && !showReport && (
                         <div style={{ padding: '40px', textAlign: 'center', color: '#999' }}>
-                            No hay pedidos registrados en {formattedMonth.replace('de ', '')}.
+                            No hay pedidos registrados en {formattedPeriod.replace(/^(de|del)\s*/i, '')}.
                         </div>
                     )}
                 </div>

@@ -134,23 +134,34 @@ const ProductCard = ({ product, onSelect }) => {
                     flexWrap: 'wrap',
                     gap: '8px'
                 }}>
-                    <span
-                        key={`price-${productId}`}
-                        className="product-card-price"
-                        style={{
-                            fontSize: '1.1rem',
-                            fontWeight: 'bold',
-                            color: 'var(--color-primary)'
-                        }}
-                    >
-                        {formatPrice(product.price)}
-                    </span>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <span
+                            key={`price-${productId}`}
+                            className="product-card-price"
+                            style={{
+                                fontSize: '1.1rem',
+                                fontWeight: 'bold',
+                                color: 'var(--color-primary)'
+                            }}
+                        >
+                            {formatPrice(product.price)}
+                        </span>
+                        {product.allowUnitSale && (
+                            <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: '500' }}>
+                                ({formatPrice(product.unitPrice || product.price)} c/{product.unitName || 'unidad'})
+                            </span>
+                        )}
+                    </div>
 
                     <motion.button
                         key={`btn-${productId}`}
                         onClick={(e) => {
-                            e.stopPropagation(); // Prevents modal from opening when clicking the button
-                            addToCart(product);
+                            e.stopPropagation();
+                            if (product.allowUnitSale) {
+                                onSelect();
+                            } else {
+                                addToCart(product);
+                            }
                         }}
                         className="btn btn-primary"
                         disabled={isOutOfStock}
@@ -172,6 +183,8 @@ const ProductCard = ({ product, onSelect }) => {
                     >
                         {isOutOfStock ? (
                             <span key={`label-out-${productId}`}>Agotado</span>
+                        ) : product.allowUnitSale ? (
+                            <span key={`label-opt-${productId}`}>Elegir Unidades</span>
                         ) : (
                             <>
                                 <motion.div
